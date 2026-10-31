@@ -702,3 +702,11 @@ form {
         flex-wrap: wrap;
     }
 }
+.add-subject-form input {
+    flex: 1;
+    min-width: 0;
+}
+
+.add-subject-form input[name="credits"] {
+    flex: 0 0 110px;
+}

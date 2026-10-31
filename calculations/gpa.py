@@ -9,46 +9,32 @@ GRADING_SCALE = [
 ]
 
 
-def percentage_to_grade(percentage, scale=GRADING_SCALE):
-
+def percentage_to_grade(percentage):
     if not 0 <= percentage <= 100:
-        raise ValueError("Percentage must be between 0 and 100")
+        raise ValueError("Percentage must be between 0 and 100.")
 
-    for minimum, grade, points in scale:
+    for minimum, grade, points in GRADING_SCALE:
         if percentage >= minimum:
-            return grade
-
-
-def percentage_to_points(percentage, scale=GRADING_SCALE):
-
-    if not 0 <= percentage <= 100:
-        raise ValueError("Percentage must be between 0 and 100")
-
-    for minimum, grade, points in scale:
-        if percentage >= minimum:
-            return points
+            return grade, points
 
 
 def calculate_gpa(subjects):
-
-    total_weighted_points = 0
+    total_points = 0
     total_credits = 0
 
     for subject in subjects:
-
-        credits = subject["credits"]
-        points = subject["grade_points"]
+        credits = float(subject["credits"])
+        percentage = float(subject["percentage"])
 
         if credits <= 0:
-            raise ValueError("Credits must be positive")
+            raise ValueError("Credits must be greater than zero.")
 
-        if not 0 <= points <= 10:
-            raise ValueError("Grade points must be between 0 and 10")
+        grade, points = percentage_to_grade(percentage)
 
-        total_weighted_points += credits * points
+        total_points += points * credits
         total_credits += credits
 
     if total_credits == 0:
         return None
 
-    return round(total_weighted_points / total_credits, 2)
+    return round(total_points / total_credits, 2)

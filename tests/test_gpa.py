@@ -1,39 +1,39 @@
 import pytest
 
-from calculations.gpa import (
-    percentage_to_grade,
-    percentage_to_points,
-    calculate_gpa
-)
+from calculations.gpa import percentage_to_grade, calculate_gpa
 
 
-def test_grade_conversion():
-    assert percentage_to_grade(95) == "O"
-    assert percentage_to_grade(84) == "A+"
-    assert percentage_to_grade(35) == "F"
-
-
-def test_grade_points():
-    assert percentage_to_points(95) == 10
-    assert percentage_to_points(75) == 8
-    assert percentage_to_points(35) == 0
-
-
-def test_calculate_gpa():
-
-    subjects = [
-        {"credits": 4, "grade_points": 10},
-        {"credits": 3, "grade_points": 9},
-        {"credits": 4, "grade_points": 8}
-    ]
-
-    assert calculate_gpa(subjects) == 9.0
-
-
-def test_empty_subjects():
-    assert calculate_gpa([]) is None
+def test_percentage_to_grade():
+    assert percentage_to_grade(95) == ("O", 10)
+    assert percentage_to_grade(85) == ("A+", 9)
+    assert percentage_to_grade(45) == ("C", 5)
+    assert percentage_to_grade(30) == ("F", 0)
 
 
 def test_invalid_percentage():
     with pytest.raises(ValueError):
-        percentage_to_points(110)
+        percentage_to_grade(110)
+
+
+def test_calculate_gpa():
+    subjects = [
+        {"credits": 4, "percentage": 95},
+        {"credits": 3, "percentage": 85},
+        {"credits": 3, "percentage": 75}
+    ]
+
+    # (4 × 10 + 3 × 9 + 3 × 8) / 10
+    assert calculate_gpa(subjects) == 9.1
+
+
+def test_invalid_credits():
+    subjects = [
+        {"credits": 0, "percentage": 90}
+    ]
+
+    with pytest.raises(ValueError):
+        calculate_gpa(subjects)
+
+
+def test_empty_subjects():
+    assert calculate_gpa([]) is None

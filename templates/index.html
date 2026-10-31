@@ -51,17 +51,25 @@
             <h2>Subjects</h2>
         </div>
 
-        <form action="{{ url_for('add_subject') }}" method="POST"
-              class="add-subject-form">
+        <form action="{{ url_for('add_subject') }}" method="POST" class="add-subject-form">
+    <input
+        type="text"
+        name="subject"
+        placeholder="Subject name"
+        required
+    >
 
-            <input type="text"
-                   name="subject"
-                   placeholder="Subject name"
-                   required>
+    <input
+        type="number"
+        name="credits"
+        placeholder="Credits"
+        min="0.5"
+        step="0.5"
+        required
+    >
 
-            <button class="primary-button">+ Add Subject</button>
-
-        </form>
+    <button class="primary-button">+ Add Subject</button>
+</form>
 
 
         {% for subject in subjects %}
@@ -70,7 +78,7 @@
 
             <div class="section-heading">
 
-                <h3>{{ subject.name }}</h3>
+                <h3>{{ subject.name }} — {{ subject.credits }} Credits</h3>
 
                 <form action="{{ url_for('delete_subject', subject_id=subject.id) }}"
                       method="POST">

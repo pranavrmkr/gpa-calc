@@ -1,5 +1,6 @@
 from flask import Flask, render_template, request, redirect, url_for, session
 from calculations.weighted_average import calculate_required_marks
+from calculations.gpa import calculate_gpa, percentage_to_grade
 
 app = Flask(__name__)
 
@@ -42,26 +43,31 @@ def set_target():
 
 @app.route("/add-subject", methods=["POST"])
 def add_subject():
-
     name = request.form.get("subject", "").strip()
+    credits = request.form.get("credits", type=float)
 
     if not name:
-        return redirect(url_for("home"))
+        session["error"] = "Subject name is required."
+        return redirect(url_for("index"))
+
+    if credits is None or credits <= 0:
+        session["error"] = "Credits must be greater than zero."
+        return redirect(url_for("index"))
 
     subjects = session.get("subjects", [])
 
-    new_id = max((s["id"] for s in subjects), default=0) + 1
-
-    subjects.append({
-        "id": new_id,
+    new_subject = {
+        "id": max((s["id"] for s in subjects), default=0) + 1,
         "name": name,
+        "credits": credits,
         "assessments": []
-    })
+    }
 
+    subjects.append(new_subject)
     session["subjects"] = subjects
+
     invalidate_results()
-    
-    return redirect(url_for("home"))
+    return redirect("/")
 
 
 @app.route("/delete-subject/<int:subject_id>", methods=["POST"])
