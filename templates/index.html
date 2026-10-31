@@ -180,40 +180,58 @@
 
     <section class="card results-card">
 
-        <h2>Results</h2>
+    <h2>Results</h2>
 
-        {% for subject in subjects %}
+    {% for subject in subjects %}
 
-            {% set result = results.get(subject.id|string) %}
+        {% set result = results.get(subject.id|string) %}
 
-            {% if result %}
+        {% if result %}
 
-                <div class="result-item">
+            <div class="result-item">
 
-                    <h3>{{ subject.name }}</h3>
+                <h3>{{ subject.name }}</h3>
 
-                    {% if result.status == "possible" %}
+                <p>Target: {{ result.target }}%</p>
 
-                        <strong>{{ result.required_marks }}%</strong>
-                        <p>Required average on remaining assessments.</p>
+                <p>
+                    Completed contribution:
+                    {{ result.completed_contribution }}%
+                </p>
 
-                    {% elif result.status == "achieved" %}
+                <p>
+                    Remaining weight:
+                    {{ result.remaining_weight }}%
+                </p>
 
-                        <p>Target already achieved.</p>
+                <p>
+                    Maximum possible grade:
+                    {{ result.maximum_possible }}%
+                </p>
 
-                    {% elif result.status == "impossible" %}
+                {% if result.status == "possible" %}
 
-                        <p>Target is mathematically unreachable.</p>
+                    <strong>{{ result.required_marks }}%</strong>
 
-                    {% endif %}
+                    <p>Required average on remaining assessments.</p>
 
-                </div>
+                {% elif result.status == "achieved" %}
 
-            {% endif %}
+                    <p>Target already achieved.</p>
 
-        {% endfor %}
+                {% elif result.status == "impossible" %}
 
-    </section>
+                    <p>Target is mathematically unreachable.</p>
+
+                {% endif %}
+
+            </div>
+
+        {% endif %}
+
+    {% endfor %}
+
+</section>
 
     {% endif %}
 
