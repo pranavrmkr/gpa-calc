@@ -504,3 +504,80 @@ footer {
     }
 
 }
+.page-header {
+    padding: 45px 0 30px;
+}
+
+.page-header h1 {
+    font-size: 32px;
+    letter-spacing: -1px;
+}
+
+form {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.input-group {
+    margin-top: 20px;
+}
+
+.input-group input,
+.assessment-grid input {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #e9ebf0;
+    border-radius: 8px;
+    font-size: 13px;
+    outline: none;
+}
+
+.input-group input:focus,
+.assessment-grid input:focus {
+    border-color: var(--primary);
+}
+
+.input-group label {
+    display: block;
+    margin-bottom: 8px;
+}
+
+.assessment-grid {
+    display: grid;
+    grid-template-columns: 1.2fr 1fr 1fr;
+    gap: 12px;
+    margin-top: 14px;
+    font-size: 12px;
+}
+
+.assessment-grid span {
+    font-weight: 650;
+    color: var(--muted);
+}
+
+.primary-button {
+    align-self: flex-start;
+}
+
+.results-card,
+.error-card {
+    margin-top: 22px;
+}
+
+.result-value {
+    font-size: 42px;
+    font-weight: 750;
+    color: var(--primary);
+    margin: 15px 0;
+}
+
+.error-card {
+    border-left: 4px solid #dc4444;
+}
+
+@media (max-width: 600px) {
+    .assessment-grid {
+        grid-template-columns: 1fr;
+    }
+}

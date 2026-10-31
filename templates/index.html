@@ -1,11 +1,9 @@
-```html
 <!DOCTYPE html>
 <html lang="en">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
     <title>GPA Calculator</title>
 
     <link rel="stylesheet"
@@ -14,80 +12,129 @@
 
 <body>
 
-    <main class="container">
+<main class="container">
 
-        <header class="page-header">
-            <h1>GPA Calculator</h1>
-        </header>
+    <header class="page-header">
+        <h1>GPA Calculator</h1>
+    </header>
 
-        <section class="dashboard-grid">
+    <form method="POST">
 
-            <div class="main-column">
+        <section class="card">
 
-                <!-- Target Configuration -->
-                <div class="card target-card">
+            <h2>Subject Details</h2>
 
-                    <h2>Target GPA</h2>
-
-                    <div class="target-inputs">
-
-                        <div class="input-group">
-                            <label for="target-gpa">Target GPA</label>
-
-                            <div class="input-wrapper">
-                                <input
-                                    type="number"
-                                    id="target-gpa"
-                                    placeholder="9.0"
-                                    min="0"
-                                    step="0.1">
-                            </div>
-                        </div>
-
-                    </div>
-
-                </div>
-
-
-                <!-- Subject Manager -->
-                <div class="card subject-card">
-
-                    <div class="section-heading">
-                        <h2>Subjects</h2>
-
-                        <button class="primary-button" type="button">
-                            + Add Subject
-                        </button>
-                    </div>
-
-                    <div class="subject-list">
-                        <!-- Subject cards will be rendered here -->
-                    </div>
-
-                </div>
-
+            <div class="input-group">
+                <label>Subject Name</label>
+                <input type="text" name="subject"
+                       placeholder="Mathematics" required>
             </div>
 
-
-            <!-- Results -->
-            <aside class="sidebar-column">
-
-                <div class="card results-card">
-
-                    <h2>Results</h2>
-
-                    <div class="result-content">
-                        <!-- Calculated results will appear here -->
-                    </div>
-
-                </div>
-
-            </aside>
+            <div class="input-group">
+                <label>Target Percentage</label>
+                <input type="number" name="target"
+                       min="0" max="100" step="0.01"
+                       placeholder="80" required>
+            </div>
 
         </section>
 
-    </main>
+
+        <section class="card">
+
+            <h2>Assessments</h2>
+
+            <div class="assessment-grid">
+                <span>Assessment</span>
+                <span>Weight (%)</span>
+                <span>Score (0–100)</span>
+            </div>
+
+            {% for i in range(1, 4) %}
+
+            <div class="assessment-grid">
+
+                <input type="text"
+                       name="name{{ i }}"
+                       placeholder="Assessment {{ i }}"
+                       required>
+
+                <input type="number"
+                       name="weight{{ i }}"
+                       min="0" max="100"
+                       step="0.01"
+                       placeholder="Weight"
+                       required>
+
+                <input type="number"
+                       name="score{{ i }}"
+                       min="0" max="100"
+                       step="0.01"
+                       placeholder="Pending">
+
+            </div>
+
+            {% endfor %}
+
+            <p class="muted">
+                Leave the score empty if an assessment is pending.
+            </p>
+
+        </section>
+
+
+        <button type="submit" class="primary-button">
+            Calculate Required Marks
+        </button>
+
+    </form>
+
+
+    {% if error %}
+
+    <section class="card error-card">
+        <h3>Invalid Input</h3>
+        <p>{{ error }}</p>
+    </section>
+
+    {% endif %}
+
+
+    {% if result %}
+
+    <section class="card results-card">
+
+        <h2>Results — {{ result.subject }}</h2>
+
+        <p>Target: {{ result.target }}%</p>
+
+        {% if result.status == "possible" %}
+
+            <h3>Required Average</h3>
+
+            <div class="result-value">
+                {{ result.required_marks }}%
+            </div>
+
+            <p>Required across your remaining assessments.</p>
+
+        {% elif result.status == "achieved" %}
+
+            <h3>Target Achieved</h3>
+            <p>Your completed assessments have already reached your target.</p>
+
+        {% elif result.status == "impossible" %}
+
+            <h3>Target Unreachable</h3>
+            <p>Your target cannot be achieved with the remaining assessments.</p>
+
+        {% endif %}
+
+    </section>
+
+    {% endif %}
+
+</main>
 
 </body>
 </html>
-```
