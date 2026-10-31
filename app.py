@@ -4,9 +4,13 @@ from calculations.weighted_average import calculate_required_marks
 app = Flask(__name__)
 
 app.secret_key = "development-secret-key"
-
+ 
+def invalidate_results():
+    session.pop("results", None)
+    session.pop("error", None) 
 
 @app.route("/", methods=["GET"])
+
 def home():
 
     return render_template(
@@ -27,12 +31,14 @@ def set_target():
             raise ValueError
 
         session["target"] = target
-
+        invalidate_results()
+        
     except (ValueError, KeyError):
         session["error"] = "Target must be between 0 and 100."
 
+    
     return redirect(url_for("home"))
-
+    
 
 @app.route("/add-subject", methods=["POST"])
 def add_subject():
@@ -53,7 +59,8 @@ def add_subject():
     })
 
     session["subjects"] = subjects
-
+    invalidate_results()
+    
     return redirect(url_for("home"))
 
 
@@ -72,7 +79,8 @@ def delete_subject(subject_id):
     results = session.get("results", {})
     results.pop(str(subject_id), None)
     session["results"] = results
-
+    invalidate_results()
+    
     return redirect(url_for("home"))
 
 
@@ -128,6 +136,8 @@ def delete_assessment(subject_id, assessment_id):
             break
 
     session["subjects"] = subjects
+    invalidate_results()
+    
 
     return redirect(url_for("home"))
 
@@ -162,7 +172,8 @@ def update_assessment(subject_id, assessment_id):
                         assessment["score"] = score
 
         session["subjects"] = subjects
-
+        invalidate_results()
+        
     except (ValueError, KeyError):
         session["error"] = "Invalid weight or assessment score."
 
@@ -171,7 +182,7 @@ def update_assessment(subject_id, assessment_id):
 
 @app.route("/calculate", methods=["POST"])
 def calculate():
-
+    session.pop("results", None)
     subjects = session.get("subjects", [])
     results = {}
 
@@ -204,6 +215,8 @@ def calculate():
         return redirect(url_for("home"))
 
     session["results"] = results
+    invalidate_results()
+    
     session.pop("error", None)
 
     return redirect(url_for("home"))
