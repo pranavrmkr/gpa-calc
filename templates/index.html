@@ -18,121 +18,209 @@
         <h1>GPA Calculator</h1>
     </header>
 
-    <form method="POST">
+    {% if session.get('error') %}
+        <div class="error-card">
+            {{ session.get('error') }}
+        </div>
+    {% endif %}
 
-        <section class="card">
+    <!-- Target -->
+    <section class="card">
+        <h2>Target Percentage</h2>
 
-            <h2>Subject Details</h2>
+        <form action="{{ url_for('set_target') }}" method="POST">
+            <div class="target-row">
+                <input type="number"
+                       name="target"
+                       min="0"
+                       max="100"
+                       step="0.01"
+                       value="{{ target }}"
+                       required>
 
-            <div class="input-group">
-                <label>Subject Name</label>
-                <input type="text" name="subject"
-                       placeholder="Mathematics" required>
+                <button class="primary-button">Save Target</button>
+            </div>
+        </form>
+    </section>
+
+
+    <!-- Subjects -->
+    <section class="card">
+
+        <div class="section-heading">
+            <h2>Subjects</h2>
+        </div>
+
+        <form action="{{ url_for('add_subject') }}" method="POST"
+              class="add-subject-form">
+
+            <input type="text"
+                   name="subject"
+                   placeholder="Subject name"
+                   required>
+
+            <button class="primary-button">+ Add Subject</button>
+
+        </form>
+
+
+        {% for subject in subjects %}
+
+        <div class="subject-item">
+
+            <div class="section-heading">
+
+                <h3>{{ subject.name }}</h3>
+
+                <form action="{{ url_for('delete_subject', subject_id=subject.id) }}"
+                      method="POST">
+
+                    <button class="delete-button">Delete Subject</button>
+
+                </form>
+
             </div>
 
-            <div class="input-group">
-                <label>Target Percentage</label>
-                <input type="number" name="target"
-                       min="0" max="100" step="0.01"
-                       placeholder="80" required>
-            </div>
 
-        </section>
+            <h4>Assessments</h4>
+
+            {% if subject.assessments %}
+
+                {% for assessment in subject.assessments %}
+
+                <div class="assessment-row">
+
+                    <div class="assessment-name">
+                        {{ assessment.name }}
+                    </div>
+
+                    <form action="{{ url_for('update_assessment',
+                                             subject_id=subject.id,
+                                             assessment_id=assessment.id) }}"
+                          method="POST"
+                          class="assessment-form">
+
+                        <input type="number"
+                               name="weight"
+                               placeholder="Weight %"
+                               min="0"
+                               max="100"
+                               step="0.01"
+                               value="{{ assessment.weight }}"
+                               required>
+
+                        <input type="number"
+                               name="score"
+                               placeholder="Pending"
+                               min="0"
+                               max="100"
+                               step="0.01"
+                               value="{{ assessment.score if assessment.score is not none else '' }}">
+
+                        <button class="secondary-button">Save</button>
+
+                    </form>
+
+                    <form action="{{ url_for('delete_assessment',
+                                             subject_id=subject.id,
+                                             assessment_id=assessment.id) }}"
+                          method="POST">
+
+                        <button class="delete-button">×</button>
+
+                    </form>
+
+                </div>
+
+                {% endfor %}
+
+            {% else %}
+
+                <p>No assessments added.</p>
+
+            {% endif %}
 
 
-        <section class="card">
-
-            <h2>Assessments</h2>
-
-            <div class="assessment-grid">
-                <span>Assessment</span>
-                <span>Weight (%)</span>
-                <span>Score (0–100)</span>
-            </div>
-
-            {% for i in range(1, 4) %}
-
-            <div class="assessment-grid">
+            <form action="{{ url_for('add_assessment', subject_id=subject.id) }}"
+                  method="POST"
+                  class="add-assessment-form">
 
                 <input type="text"
-                       name="name{{ i }}"
-                       placeholder="Assessment {{ i }}"
+                       name="assessment"
+                       placeholder="Assessment name"
                        required>
 
-                <input type="number"
-                       name="weight{{ i }}"
-                       min="0" max="100"
-                       step="0.01"
-                       placeholder="Weight"
-                       required>
+                <button class="secondary-button">+ Add Assessment</button>
 
-                <input type="number"
-                       name="score{{ i }}"
-                       min="0" max="100"
-                       step="0.01"
-                       placeholder="Pending">
+            </form>
 
-            </div>
+        </div>
 
-            {% endfor %}
+        {% endfor %}
 
-            <p class="muted">
-                Leave the score empty if an assessment is pending.
-            </p>
-
-        </section>
+    </section>
 
 
-        <button type="submit" class="primary-button">
+    <!-- Calculate -->
+    {% if subjects %}
+
+    <form action="{{ url_for('calculate') }}" method="POST">
+
+        <button class="primary-button calculate-button">
             Calculate Required Marks
         </button>
 
     </form>
 
-
-    {% if error %}
-
-    <section class="card error-card">
-        <h3>Invalid Input</h3>
-        <p>{{ error }}</p>
-    </section>
-
     {% endif %}
 
 
-    {% if result %}
+    <!-- Results -->
+    {% if results %}
 
     <section class="card results-card">
 
-        <h2>Results — {{ result.subject }}</h2>
+        <h2>Results</h2>
 
-        <p>Target: {{ result.target }}%</p>
+        {% for subject in subjects %}
 
-        {% if result.status == "possible" %}
+            {% set result = results.get(subject.id|string) %}
 
-            <h3>Required Average</h3>
+            {% if result %}
 
-            <div class="result-value">
-                {{ result.required_marks }}%
-            </div>
+                <div class="result-item">
 
-            <p>Required across your remaining assessments.</p>
+                    <h3>{{ subject.name }}</h3>
 
-        {% elif result.status == "achieved" %}
+                    {% if result.status == "possible" %}
 
-            <h3>Target Achieved</h3>
-            <p>Your completed assessments have already reached your target.</p>
+                        <strong>{{ result.required_marks }}%</strong>
+                        <p>Required average on remaining assessments.</p>
 
-        {% elif result.status == "impossible" %}
+                    {% elif result.status == "achieved" %}
 
-            <h3>Target Unreachable</h3>
-            <p>Your target cannot be achieved with the remaining assessments.</p>
+                        <p>Target already achieved.</p>
 
-        {% endif %}
+                    {% elif result.status == "impossible" %}
+
+                        <p>Target is mathematically unreachable.</p>
+
+                    {% endif %}
+
+                </div>
+
+            {% endif %}
+
+        {% endfor %}
 
     </section>
 
     {% endif %}
+
+
+    <form action="{{ url_for('clear') }}" method="POST">
+        <button class="delete-button">Clear All Data</button>
+    </form>
 
 </main>
 
