@@ -56,8 +56,7 @@ def calculate_required_marks(assessments, target):
         status = "possible"
 
         required_marks = (
-            (target - completed_score) / remaining_weight
-        )
+            (target - completed_score) / (remaining_weight / 100))
 
     return {
         "status": status,
