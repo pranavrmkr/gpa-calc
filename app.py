@@ -1,6 +1,8 @@
 import os
 import secrets
 from math import isfinite
+from pathlib import Path
+from storage import SQLiteSessions
 
 from flask import Flask, render_template, request, redirect, url_for, session, abort
 from calculations.gpa import GRADING_SCALE, validate_scale, semester_summary
@@ -8,6 +10,8 @@ from calculations.gpa import GRADING_SCALE, validate_scale, semester_summary
 app = Flask(__name__)
 
 app.secret_key = os.environ.get("SECRET_KEY") or secrets.token_hex(32)
+app.config["DATABASE"] = os.environ.get("GPA_DATABASE", str(Path(app.instance_path) / "gpa.sqlite3"))
+app.session_interface = SQLiteSessions()
  
 def invalidate_results():
     session.pop("results", None)

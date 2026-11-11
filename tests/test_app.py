@@ -4,8 +4,8 @@ from app import app
 
 
 @pytest.fixture
-def client():
-    app.config.update(TESTING=True, SECRET_KEY="test-key")
+def client(tmp_path):
+    app.config.update(TESTING=True, SECRET_KEY="test-key", DATABASE=str(tmp_path / "test.sqlite3"))
     with app.test_client() as client:
         yield client
 
@@ -121,3 +121,22 @@ def test_edit_subject_and_assessment_names(client):
     response = client.get("/")
     assert b"Algebra" in response.data
     assert b"Test" in response.data
+
+
+def test_saved_data_survives_new_client(client):
+    seed_subject(client)
+    cookie = client.get_cookie("session")
+    with app.test_client() as reopened:
+        reopened.set_cookie("session", cookie.value)
+        assert b"Math" in reopened.get("/").data
+    with app.test_client() as other:
+        assert b"Math" not in other.get("/").data
+
+
+def test_large_semester_uses_small_cookie(client):
+    with client.session_transaction() as session:
+        session["subjects"] = [{"id": i, "name": "Subject " + str(i), "credits": 4,
+                                "assessments": []} for i in range(100)]
+    assert len(client.get_cookie("session").value) == 64
+    with client.session_transaction() as session:
+        assert len(session["subjects"]) == 100
