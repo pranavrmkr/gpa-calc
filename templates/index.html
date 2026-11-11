@@ -1,339 +1,166 @@
+{% macro csrf() -%}
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+{%- endmacro %}
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>GPA Calculator</title>
-
-    <link rel="stylesheet"
-          href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <script src="{{ url_for('static', filename='js/app.js') }}" defer></script>
 </head>
-
 <body>
-
-<main class="container">
-
+<main class="container" id="calculator">
     <header class="page-header">
-        <h1>GPA Calculator</h1>
-        <p>Plan your marks, grades, and semester GPA.</p>
+        <div><span class="eyebrow">YOUR SEMESTER, AT A GLANCE</span><h1>GPA Calculator</h1>
+        <p>Add your marks, plan your targets, and check your GPA.</p></div>
+        <span class="count-label">{{ subjects | length }} subjects</span>
     </header>
+    <nav class="menu" aria-label="Calculator menus">
+        <a href="#subjects" data-tab="subjects">Subjects &amp; marks</a>
+        <a href="#targets" data-tab="targets">Target planner</a>
+        <a href="#gpa" data-tab="gpa">GPA calculator</a>
+        <a href="#settings" data-tab="settings">Settings</a>
+    </nav>
+    <div id="feedback" aria-live="polite">
+        {% if session.get('error') %}<div class="error-card" role="alert">{{ session.get('error') }}</div>{% endif %}
+        {% if session.get('notice') %}<div class="notice-card" role="status">{{ session.get('notice') }}</div>{% endif %}
+    </div>
 
-    {% if session.get('error') %}
-        <div class="error-card" role="alert">
-            {{ session.get('error') }}
-        </div>
-    {% endif %}
-
-    {% if session.get('notice') %}
-        <p class="notice-card" role="status">{{ session.get('notice') }}</p>
-    {% endif %}
-
-    <section class="card semester-preset">
-        <h2>SNU Chennai / B.Tech IT</h2>
-        <p>Add all 8 Semester 1 courses with credits and assessment weights ready to go. Existing courses and scores are kept.</p>
-        <form action="{{ url_for('semester_one') }}" method="POST">
-            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-            <button class="primary-button">+ Semester 1</button>
-        </form>
-        <p>19 GPA credits + 1 EAA credit. EAA is marked Pass (10 points) and excluded from GPA.</p>
-        <p>This preset keeps your current percentage cutoffs. Check them against your university's rules below.</p>
-    </section>
-
-    <!-- Target -->
-    <section class="card">
-        <h2>Target Percentage</h2>
-
-        <form action="{{ url_for('set_target') }}" method="POST">
-            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-            <div class="target-row">
-                <input type="number"
-                       aria-label="Target percentage"
-                       name="target"
-                       min="0"
-                       max="100"
-                       step="0.01"
-                       value="{{ target }}"
-                       required>
-
-                <button class="primary-button">Save Target</button>
-            </div>
-        </form>
-    </section>
-
-
-    <section class="card">
-        <h2>Grading and projections</h2>
-        <p>Use your institution's grade bands. The default is an illustrative 10-point scale.</p>
-        <form action="{{ url_for('settings') }}" method="POST">
-            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-            <label>Expected score on pending assessments (%)
-                <input type="number" name="pending_score" min="0" max="100" step="0.01" value="{{ pending_score }}" required>
-            </label>
-            <label>Target semester GPA
-                <input type="number" name="target_gpa" min="0" step="0.01" value="{{ target_gpa }}" required>
-            </label>
-            <label>Grade bands: minimum percentage, grade, points
-                <textarea name="scale" rows="8" required>{% for minimum, grade, points in scale %}{{ minimum }}, {{ grade }}, {{ points }}{{ '\n' }}{% endfor %}</textarea>
-            </label>
-            <button class="primary-button">Save Settings</button>
-        </form>
-    </section>
-
-    <!-- Subjects -->
-    <section class="card">
-
-        <div class="section-heading">
-            <h2>Subjects</h2>
-        </div>
-
-        <form action="{{ url_for('add_subject') }}" method="POST" class="add-subject-form">
-            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-    <input
-        type="text"
-        name="subject"
-        aria-label="New subject name"
-        placeholder="Subject name"
-        required
-    >
-
-    <input
-        type="number"
-        name="credits"
-        aria-label="New subject credits"
-        placeholder="Credits"
-        min="0.01"
-        step="any"
-        required
-    >
-
-    <button class="primary-button">+ Add Subject</button>
-</form>
-
-
-        {% for subject in subjects %}
-
-        <div class="subject-item">
-
-            <div class="section-heading">
-
-                <h3>{{ subject.name }} - {{ subject.credits }} Credits</h3>
-
-                <form action="{{ url_for('delete_subject', subject_id=subject.id) }}"
-                      method="POST">
-            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-
-                    <button class="delete-button">Delete Subject</button>
-
-                </form>
-
-            </div>
-
-
-            <form action="{{ url_for('update_subject', subject_id=subject.id) }}" method="POST" class="add-subject-form">
-            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                <input name="subject" aria-label="Subject name" value="{{ subject.name }}" required>
-                <input type="number" name="credits" aria-label="Credits" min="0.01" step="any" value="{{ subject.credits }}" required>
-                <button class="secondary-button">Save Subject</button>
+    <section id="subjects" data-panel aria-labelledby="subjects-heading">
+        <div class="panel-heading"><div><h2 id="subjects-heading">Subjects &amp; marks</h2>
+        <p>Enter marks like 14/20 or a percentage like 70. Save each row when you're done.</p></div></div>
+        <section class="card semester-preset">
+            <div><h3>SNU Chennai / B.Tech IT</h3>
+            <p>All 8 courses, credits, and assessment weights in one click. Existing courses and scores are kept.</p>
+            <p class="muted">19 GPA credits + 1 EAA credit. EAA is Pass (10 points), excluded from GPA. Current grade cutoffs stay unchanged.</p></div>
+            <form action="{{ url_for('semester_one') }}" method="POST">{{ csrf() }}<button class="primary-button">+ Semester 1</button></form>
+        </section>
+        <details class="card" id="new-subject" {% if not subjects %}open{% endif %}>
+            <summary>Add a subject manually</summary>
+            <form action="{{ url_for('add_subject') }}" method="POST" class="form-row">{{ csrf() }}
+                <label class="grow">Subject name<input name="subject" placeholder="Subject name" required></label>
+                <label>Credits<input type="number" name="credits" min="0.01" step="any" placeholder="Credits" required></label>
+                <button class="primary-button">+ Add Subject</button>
             </form>
+        </details>
+        {% for subject in subjects %}
+        <details class="card subject-card" id="subject-{{ subject.id }}" {% if loop.first %}open{% endif %}>
+            <summary><span>{{ subject.name }}</span><span class="muted">{{ subject.credits }} credits{% if not subject.get('is_cgpa_counted', true) %} / Non-CGPA{% endif %}</span></summary>
+            <div class="subject-tools">
+                <form action="{{ url_for('update_subject', subject_id=subject.id) }}" method="POST" class="form-row grow">{{ csrf() }}
+                    <label class="grow">Subject name<input name="subject" value="{{ subject.name }}" required></label>
+                    <label>Credits<input type="number" name="credits" min="0.01" step="any" value="{{ subject.credits }}" required></label>
+                    <button class="secondary-button">Save Subject</button>
+                </form>
+                <form action="{{ url_for('delete_subject', subject_id=subject.id) }}" method="POST">{{ csrf() }}<button class="delete-button">Delete Subject</button></form>
+            </div>
             {% if not subject.get('is_cgpa_counted', true) %}
                 <p>Non-CGPA activity / Pass / 10 points. This credit is excluded from GPA.</p>
             {% else %}
-            <h4>Assessments</h4>
-            <p>Weights must add up to 100%. Enter a percentage or marks like 14/20 (70%); leave pending scores blank. Marks convert automatically when saved. Save each assessment before calculating.</p>
-            <p>Current total weight: {{ subject.assessments | sum(attribute='weight') | round(2) }}%</p>
-
-            {% if subject.assessments %}
-
+                <p class="muted">Current total weight: {{ subject.assessments | sum(attribute='weight') | round(2) }}%. Weights must add up to 100%. Leave pending scores blank.</p>
                 {% for assessment in subject.assessments %}
-
-                <div class="assessment-row">
-
-                    <div class="assessment-name">
-                        {{ assessment.name }}
-                    </div>
-
-                    <form action="{{ url_for('update_assessment',
-                                             subject_id=subject.id,
-                                             assessment_id=assessment.id) }}"
-                          method="POST"
-                          class="assessment-form">
-            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-
-                        <input name="assessment" aria-label="Assessment name" value="{{ assessment.name }}" required>
-                        <input type="number"
-                               aria-label="Assessment weight percentage"
-                               name="weight"
-                               placeholder="Weight %"
-                               min="0"
-                               max="100"
-                               step="0.01"
-                               value="{{ assessment.weight }}"
-                               required>
-
-                        <input type="text"
-                               aria-label="Assessment score as percentage or earned/total marks"
-                               name="score"
-                               placeholder="70 or 14/20"
-                               value="{{ assessment.get('score_input', assessment.score if assessment.score is not none else '') }}">
-                        {% if assessment.score is not none %}
-                            <span class="score-percentage">{{ assessment.score | round(2) }}%</span>
-                        {% endif %}
-
+                <div class="assessment-row" id="assessment-{{ subject.id }}-{{ assessment.id }}">
+                    <form action="{{ url_for('update_assessment', subject_id=subject.id, assessment_id=assessment.id) }}" method="POST" class="assessment-form">{{ csrf() }}
+                        <label class="grow">Assessment<input name="assessment" value="{{ assessment.name }}" required></label>
+                        <label>Weight %<input type="number" name="weight" min="0" max="100" step="0.01" value="{{ assessment.weight }}" required></label>
+                        <label>Score or marks<input type="text" name="score" placeholder="70 or 14/20" value="{{ assessment.get('score_input', assessment.score if assessment.score is not none else '') }}"></label>
+                        <label>Total marks<input type="number" name="max_marks" min="0.01" step="any" placeholder="e.g. 20" value="{{ assessment.get('max_marks') if assessment.get('max_marks') is not none else '' }}"></label>
                         <button class="secondary-button">Save</button>
-
+                        {% if assessment.score is not none %}<span class="score-percentage">{{ assessment.score | round(2) }}%</span>{% endif %}
                     </form>
-
-                    <form action="{{ url_for('delete_assessment',
-                                             subject_id=subject.id,
-                                             assessment_id=assessment.id) }}"
-                          method="POST">
-            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-
-                        <button class="delete-button" aria-label="Delete {{ assessment.name }}">Delete</button>
-
-                    </form>
-
+                    <form action="{{ url_for('delete_assessment', subject_id=subject.id, assessment_id=assessment.id) }}" method="POST">{{ csrf() }}<button class="delete-button" aria-label="Delete {{ assessment.name }}">Delete</button></form>
                 </div>
-
-                {% endfor %}
-
-            {% else %}
-
-                <p>No assessments added.</p>
-
+                {% else %}<p>No assessments added.</p>{% endfor %}
+                <p class="muted">Total marks is optional and lets the target planner show marks out of 20, 50, etc. A fraction such as 14/20 fills it automatically. A plain score is always a percentage.</p>
+                <form action="{{ url_for('add_assessment', subject_id=subject.id) }}" method="POST" class="form-row">{{ csrf() }}
+                    <label class="grow">New assessment<input name="assessment" placeholder="Assessment name" required></label>
+                    <button class="secondary-button">+ Add Assessment</button>
+                </form>
             {% endif %}
-
-
-            <form action="{{ url_for('add_assessment', subject_id=subject.id) }}"
-                  method="POST"
-                  class="add-assessment-form">
-            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-
-                <input type="text"
-                       name="assessment"
-                       aria-label="New assessment name"
-                       placeholder="Assessment name"
-                       required>
-
-                <button class="secondary-button">+ Add Assessment</button>
-
-            </form>
-
-            {% endif %}
-        </div>
-
-        {% else %}
-        <p>Add a subject to get started. Your work saves automatically in this browser.</p>
-        {% endfor %}
-
+        </details>
+        {% else %}<div class="empty-state">Add Semester 1 or create a subject to get started.</div>{% endfor %}
     </section>
 
+    <section id="targets" data-panel aria-labelledby="targets-heading">
+        <div class="panel-heading"><div><h2 id="targets-heading">Target planner</h2>
+        <p>Set a different final percentage for each subject and see what you need next.</p></div></div>
+        <div class="card tip-card"><p>Each assessment estimate assumes <strong>{{ pending_score }}%</strong> on the other pending assessments. These are separate scenarios, not a combined set of required scores. Change the expected score in <a href="#settings" data-tab="settings">Settings</a>.</p>
+        <p>For the same score across all pending assessments, use the required average. Marks are rounded up to two decimals; round up again if your exam only awards whole marks.</p></div>
+        {% for subject in subjects if subject.get('is_cgpa_counted', true) %}
+        {% set plan = plans.get(subject.id) %}
+        <article class="card" id="target-{{ subject.id }}">
+            <h3>{{ subject.name }}</h3>
+            <form action="{{ url_for('subject_target', subject_id=subject.id) }}" method="POST" class="form-row">{{ csrf() }}
+                <label>Your target percentage<input type="number" name="target" min="0" max="100" step="0.01" value="{{ subject.get('target', '') }}" placeholder="Default: {{ target }}"></label>
+                <button class="primary-button">Update target</button>
+                <span class="muted">Blank uses the default of {{ target }}%.</span>
+            </form>
+            {% if plan.error %}<p class="inline-error">{{ plan.error }} <a href="#subjects" data-tab="subjects">Check assessments</a>.</p>
+            {% else %}
+                <div class="stats"><p>Target<strong>{{ plan.target }}%</strong></p><p>Already earned<strong>{{ plan.completed_contribution }}%</strong></p><p>Maximum possible<strong>{{ plan.maximum_possible }}%</strong></p></div>
+                {% if plan.status == 'achieved' %}<p class="success-text">Target already achieved.</p>
+                {% elif plan.status == 'impossible' %}<p class="inline-error">Target is mathematically unreachable.</p>
+                {% else %}<p>Required average on remaining assessments: <strong>{{ plan.required_marks }}%</strong></p>{% endif %}
+                {% if plan.assessments %}
+                <div class="table-wrap"><table><caption>Marks needed in each pending assessment</caption><thead><tr><th>Assessment</th><th>Required percentage</th><th>Required marks</th></tr></thead><tbody>
+                    {% for row in plan.assessments %}<tr><td>{{ row.name }}</td>
+                    {% if row.possible %}<td>{{ row.percentage }}%</td><td>{% if row.total %}{{ row.marks }} / {{ row.total }}{% else %}Add total marks in Subjects &amp; marks{% endif %}</td>
+                    {% else %}<td colspan="2">Not possible with the other pending scores at {{ pending_score }}%</td>{% endif %}</tr>{% endfor %}
+                </tbody></table></div>
+                {% else %}<p>No pending assessments with a positive weight.</p>{% endif %}
+            {% endif %}
+        </article>
+        {% else %}<div class="empty-state">Add a GPA-counted subject to plan your marks.</div>{% endfor %}
+    </section>
 
-    <!-- Calculate -->
-    {% if subjects %}
+    <section id="gpa" data-panel aria-labelledby="gpa-heading">
+        <div class="panel-heading"><div><h2 id="gpa-heading">GPA calculator</h2><p>See your finished grades and where this semester could land.</p></div>
+        {% if subjects %}<form action="{{ url_for('calculate') }}" method="POST">{{ csrf() }}<button class="primary-button">Calculate GPA</button></form>{% endif %}</div>
+        {% if summary and results %}
+            <section class="card results-card">
+                <div class="section-heading"><h3>Your semester</h3><a href="{{ url_for('export') }}">Download CSV</a></div>
+                <div class="gpa-grid"><p class="gpa-metric">{{ 'Semester GPA' if summary.complete else 'GPA for fully graded subjects' }}: {{ summary.gpa if summary.gpa is not none else 'No fully graded subjects yet' }}</p>
+                <p class="gpa-metric">Projected semester GPA: {{ summary.projected_gpa if summary.projected_gpa is not none else 'Not available' }}</p>
+                <p class="gpa-metric">Maximum possible GPA: {{ summary.maximum_gpa if summary.maximum_gpa is not none else 'Not available' }}</p></div>
+                <p>Projection assumes {{ pending_score }}% on every pending assessment. EAA is excluded.</p>
+                <p>Target GPA: {{ target_gpa }}.
+                {% if summary.maximum_gpa is not none and summary.maximum_gpa < target_gpa %}This target is unreachable with the current scores.
+                {% elif summary.projected_gpa is not none and summary.projected_gpa >= target_gpa %}Your projection meets the target.
+                {% elif summary.projected_gpa is not none %}Your projection is below the target. Try a higher pending score in Settings.
+                {% else %}Add GPA-counted subjects to calculate a semester GPA.{% endif %}</p>
+            </section>
+            <div class="result-grid">
+            {% for subject in subjects %}{% set result = results.get(subject.id|string) %}{% if result %}
+                <article class="card result-item"><h3>{{ subject.name }}</h3>
+                {% if result.status == 'excluded' %}<p>Pass / 10 points / Excluded from GPA</p>
+                {% else %}<p>{{ 'Final' if result.final else 'Projected' }} percentage: {{ result.percentage }}%</p><p>Grade: {{ result.grade }} / Grade points: {{ result.points }}</p>
+                <p>Target: {{ result.target }}%</p><p>Completed contribution: {{ result.completed_contribution }}%</p><p>Remaining weight: {{ result.remaining_weight }}%</p>
+                <p>Maximum possible percentage: {{ result.maximum_possible }}%</p>
+                {% if result.status == 'possible' %}<p>Required average on remaining assessments: <strong>{{ result.required_marks }}%</strong></p>
+                {% elif result.status == 'achieved' %}<p>Target already achieved.</p>{% else %}<p>Target is mathematically unreachable.</p>{% endif %}{% endif %}</article>
+            {% endif %}{% endfor %}</div>
+        {% else %}<div class="empty-state">Save your marks, then choose Calculate GPA. Each subject's weights must total 100%.</div>{% endif %}
+    </section>
 
-    <form action="{{ url_for('calculate') }}" method="POST">
-            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-
-        <button class="primary-button calculate-button">
-            Calculate Results
-        </button>
-
-    </form>
-
-    {% endif %}
-
-
-    <!-- Results -->
-    {% if results %}
-
-    <section class="card results-card">
-
-    <h2>Results</h2>
-    <a href="{{ url_for('export') }}">Download CSV</a>
-    {% if summary %}
-        <p>{{ 'Semester GPA' if summary.complete else 'GPA for fully graded subjects' }}:
-            <strong>{{ summary.gpa if summary.gpa is not none else 'No fully graded subjects yet' }}</strong></p>
-        <p>Projected semester GPA: {{ summary.projected_gpa }}</p>
-        <p>Maximum possible GPA: {{ summary.maximum_gpa }}</p>
-        <p>Projection assumes {{ pending_score }}% on every pending assessment.</p>
-        <p>Target GPA: {{ target_gpa }}.
-        {% if summary.maximum_gpa is not none and summary.maximum_gpa < target_gpa %}
-            This target is unreachable with the current scores.
-        {% elif summary.projected_gpa is not none and summary.projected_gpa >= target_gpa %}
-            Your projection meets the target.
-        {% else %}
-            Your projection is below the target. Try a higher pending score.
-        {% endif %}</p>
-    {% endif %}
-
-    {% for subject in subjects %}
-
-        {% set result = results.get(subject.id|string) %}
-
-        {% if result %}
-
-            <div class="result-item">
-
-                <h3>{{ subject.name }}</h3>
-
-                {% if result.status == "excluded" %}
-                    <p>Pass / 10 points / Excluded from GPA</p>
-                {% else %}
-                <p>{{ 'Final' if result.final else 'Projected' }} percentage: {{ result.percentage }}%</p>
-                <p>Grade: {{ result.grade }} / Grade points: {{ result.points }}</p>
-                <p>Target: {{ result.target }}%</p>
-
-                <p>
-                    Completed contribution:
-                    {{ result.completed_contribution }}%
-                </p>
-
-                <p>
-                    Remaining weight:
-                    {{ result.remaining_weight }}%
-                </p>
-
-                <p>
-                    Maximum possible percentage:
-                    {{ result.maximum_possible }}%
-                </p>
-
-                {% if result.status == "possible" %}
-
-                    <strong>{{ result.required_marks }}%</strong>
-
-                    <p>Required average on remaining assessments.</p>
-
-                {% elif result.status == "achieved" %}
-
-                    <p>Target already achieved.</p>
-
-                {% elif result.status == "impossible" %}
-
-                    <p>Target is mathematically unreachable.</p>
-
-                {% endif %}
-
-                {% endif %}
-            </div>
-
-        {% endif %}
-
-    {% endfor %}
-
-</section>
-
-    {% endif %}
-
-
-    <form action="{{ url_for('clear') }}" method="POST">
-            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-        <button class="delete-button">Clear All Data</button>
-    </form>
-
+    <section id="settings" data-panel aria-labelledby="settings-heading">
+        <div class="panel-heading"><div><h2 id="settings-heading">Settings</h2><p>Set your defaults and grading scale.</p></div></div>
+        <section class="card"><h3>Default subject target</h3><p>Used by subjects without their own target.</p>
+            <form action="{{ url_for('set_target') }}" method="POST" class="form-row">{{ csrf() }}<label>Target percentage<input type="number" name="target" min="0" max="100" step="0.01" value="{{ target }}" required></label><button class="primary-button">Save Target</button></form>
+        </section>
+        <section class="card"><h3>Grading and projections</h3><p>The default is an illustrative 10-point scale. Use your institution's official percentage cutoffs.</p>
+            <form action="{{ url_for('settings') }}" method="POST">{{ csrf() }}
+                <div class="form-row"><label class="grow">Expected score on pending assessments (%)<input type="number" name="pending_score" min="0" max="100" step="0.01" value="{{ pending_score }}" required></label>
+                <label class="grow">Target semester GPA<input type="number" name="target_gpa" min="0" step="0.01" value="{{ target_gpa }}" required></label></div>
+                <label>Grade bands: minimum percentage, grade, points<textarea name="scale" rows="8" required>{% for minimum, grade, points in scale %}{{ minimum }}, {{ grade }}, {{ points }}{{ '\n' }}{% endfor %}</textarea></label>
+                <button class="primary-button">Save Settings</button>
+            </form>
+        </section>
+        <section class="card"><h3>Saved data</h3><p>Your saved marks stay in this browser's semester. Export results from the GPA menu before clearing anything you need to keep.</p>
+            <form action="{{ url_for('clear') }}" method="POST">{{ csrf() }}<button class="delete-button">Clear All Data</button></form>
+        </section>
+    </section>
 </main>
-
 </body>
 </html>
