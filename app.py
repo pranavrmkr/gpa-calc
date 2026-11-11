@@ -1,10 +1,12 @@
+import csv
+import io
 import os
 import secrets
 from math import isfinite
 from pathlib import Path
 from storage import SQLiteSessions
 
-from flask import Flask, render_template, request, redirect, url_for, session, abort
+from flask import Flask, render_template, request, redirect, url_for, session, abort, Response
 from calculations.gpa import GRADING_SCALE, validate_scale, semester_summary
 
 app = Flask(__name__)
@@ -260,6 +262,43 @@ def update_subject(subject_id):
         session["subjects"] = subjects
         invalidate_results()
     return redirect(url_for("home"))
+
+
+@app.get("/export")
+def export():
+    subjects = session.get("subjects", [])
+    if not subjects:
+        session["error"] = "Add subjects before exporting."
+        return redirect(url_for("home"))
+    try:
+        summary = semester_summary(subjects, session.get("target", 80),
+                                   session.get("pending_score", 80), session.get("scale", GRADING_SCALE))
+    except ValueError as error:
+        session["error"] = str(error)
+        return redirect(url_for("home"))
+    output = io.StringIO(newline="")
+    writer = csv.writer(output)
+    writer.writerow(["Subject", "Credits", "Status", "Percentage", "Grade", "Grade points",
+                     "Target percentage", "Required pending average", "Maximum percentage"])
+    for subject in subjects:
+        result = summary["results"][str(subject["id"])]
+        name = subject["name"]
+        grade = result["grade"]
+        if name.lstrip().startswith(("=", "+", "-", "@")):
+            name = "'" + name
+        if grade.lstrip().startswith(("=", "+", "-", "@")):
+            grade = "'" + grade
+        writer.writerow([name, subject["credits"], "Final" if result["final"] else "Projected",
+                         result["percentage"], grade, result["points"], result["target"],
+                         result["required_marks"], result["maximum_possible"]])
+    writer.writerow([])
+    writer.writerow(["GPA for fully graded subjects", summary["gpa"]])
+    writer.writerow(["Projected semester GPA", summary["projected_gpa"]])
+    writer.writerow(["Maximum possible GPA", summary["maximum_gpa"]])
+    writer.writerow(["Expected pending score (%)", session.get("pending_score", 80)])
+    writer.writerow(["Target GPA", session.get("target_gpa", 8)])
+    return Response(output.getvalue(), mimetype="text/csv",
+                    headers={"Content-Disposition": "attachment; filename=gpa-results.csv"})
 
 
 @app.route("/clear", methods=["POST"])

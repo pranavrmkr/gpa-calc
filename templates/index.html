@@ -214,6 +214,7 @@
     <section class="card results-card">
 
     <h2>Results</h2>
+    <a href="{{ url_for('export') }}">Download CSV</a>
     {% if summary %}
         <p>{{ 'Semester GPA' if summary.complete else 'GPA for fully graded subjects' }}:
             <strong>{{ summary.gpa if summary.gpa is not none else 'No fully graded subjects yet' }}</strong></p>

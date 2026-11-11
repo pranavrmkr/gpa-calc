@@ -140,3 +140,25 @@ def test_large_semester_uses_small_cookie(client):
     assert len(client.get_cookie("session").value) == 64
     with client.session_transaction() as session:
         assert len(session["subjects"]) == 100
+
+
+def test_export_matches_calculation(client):
+    seed_subject(client)
+    response = client.get("/export")
+    assert response.status_code == 200
+    assert response.mimetype == "text/csv"
+    assert "attachment" in response.headers["Content-Disposition"]
+    assert b"Math,4,Projected,78.0,A,8.0,80,83.33,90" in response.data
+    assert b"Projected semester GPA,8.0" in response.data
+
+
+def test_export_checks_invalid_data(client):
+    response = client.get("/export", follow_redirects=True)
+    assert b"Add subjects before exporting." in response.data
+
+
+def test_export_escapes_formulas(client):
+    seed_subject(client)
+    client.post("/update-subject/1", data={"subject": "=1+1", "credits": "4"})
+    assert b"'=1+1" in client.get("/export").data
+
