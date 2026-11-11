@@ -40,16 +40,26 @@ Clicking again adds only missing courses. Preset IDs and matching course names p
 
 The supplied specification defines grade points but does not provide percentage cutoffs. Loading Semester 1 keeps your current grading scale; check the cutoffs against your institution's rules before relying on the GPA.
 
-## How to use it
+## Menus and workflow
 
-1. Set the target percentage you want in each subject.
-2. Use **+ Semester 1**, or add subjects with their credit values. You can edit names and credits later.
-3. Add assessments, then save each assessment's weight and score. Weights within each subject must total 100%. Scores accept percentages or earned/total marks: enter `18/20` or `90` for 90%. Fractions convert automatically when you save, and the converted percentage appears beside the field. Your original marks entry stays in the field for editing. Decimal marks such as `14.5/20` work too. Total marks must be positive, and earned marks must be between zero and the total. Leave unfinished assessments blank; a score of 0 counts as completed.
-4. In **Grading and projections**, set your expected score for pending assessments and your target semester GPA. Enter your institution's grade bands and save the settings.
-5. Select **Calculate Results** to see required marks, subject grades, and semester GPA projections.
-6. Select **Download CSV** in the results to export the current calculation.
+- **Subjects & marks**: load Semester 1, add or edit subjects, and enter assessment scores. Open a subject card to work on it. Scores accept percentages or earned/total marks: `18/20` and `90` both mean 90%. Decimal marks such as `14.5/20` work too. Fractions keep their original entry for editing and show the converted percentage after saving. Leave pending scores blank; 0 counts as completed. Assessment weights within a subject must total 100%.
+- **Target planner**: set a final percentage separately for each subject. Blank targets use the default target from Settings. Saving a target immediately updates its plan; it also applies to GPA results and CSV exports.
+- **GPA calculator**: choose **Calculate GPA** after saving your marks to see actual and projected GPA and subject grades. **Download CSV** exports the results.
+- **Settings**: set the default subject target, expected score on pending assessments, target semester GPA, and grade bands. Clear saved data here when you want a fresh semester.
 
-Edits invalidate previous results. Save every form before calculating again. Unsaved input is not included. **Clear All Data** removes the saved semester and settings for the current browser; export results first if you need to keep them.
+With JavaScript enabled, forms save and delete in place without a page reload. The current menu, open subject cards, scroll position, and unsaved edits in other forms are kept. A status message confirms saves or explains errors. Duplicate submissions are blocked while a request is running. Validation errors keep the submitted draft editable. Without JavaScript, all sections remain available and forms use normal page navigation.
+
+Save every form before calculating; unsaved input is not included. Changes invalidate previous GPA results, so use **Calculate GPA** again after edits. **Clear All Data** removes saved work and unsaved drafts; export anything you need first.
+
+## Marks needed in an assessment
+
+In **Subjects & marks**, enter an optional **Total marks** for a pending assessment, such as 20 or 50, then save the row. An entry such as `14/20` also records the total automatically. A plain score is always a percentage even if a total is set.
+
+The **Target planner** shows each subject's required average across its pending assessments, plus the required percentage and marks for each individual pending assessment. For example, a required 70% on an assessment out of 20 is shown as `14 / 20`.
+
+Each individual estimate assumes the expected pending score from Settings on all the *other* pending assessments. These rows are separate scenarios, not a combined set of marks to achieve together. Use the required average if you want the same percentage across all pending assessments. An estimate can be unreachable under the chosen assumptions even when a different combination of scores could reach the subject target.
+
+Marks and individual required percentages round up to two decimal places so the displayed value does not undershoot the target. If an exam only awards whole marks, round up to the next whole mark. Zero-weight pending assessments are left out of the estimates. The planner explains missing assessments or invalid total weights per subject, so another incomplete subject does not block a valid subject's plan.
 
 ## Results explained
 
@@ -61,7 +71,7 @@ Edits invalidate previous results. Save every form before calculating again. Uns
 - **Projected semester GPA** includes all subjects, using expected pending scores.
 - **Maximum possible GPA** assumes 100% on every pending assessment. The target GPA message compares your target against the projection and maximum.
 
-A zero-weight pending assessment does not prevent a subject from being final. Calculations use full precision before displaying values rounded to two decimal places. GPA is calculated from grade points, not directly from the average percentage.
+A zero-weight pending assessment does not prevent a subject from being final. GPA and subject percentages use full precision before displaying values rounded to two decimal places; individual assessment requirements round up as described above. GPA is calculated from grade points, not directly from the average percentage.
 
 ## Custom grading scales
 
@@ -107,6 +117,8 @@ For scores `S` and assessment weights `W`:
 Completed contribution = sum(score * weight / 100) for completed assessments
 Required pending average = (target - completed contribution) / (remaining weight / 100)
 Projected percentage = completed contribution + expected pending score * remaining weight / 100
+Selected assessment percentage = (subject target - completed contribution - expected contribution of other pending assessments) / (selected assessment weight / 100)
+Selected assessment marks = selected assessment percentage * total marks / 100
 Semester GPA = sum(subject credits * grade points) / sum(subject credits)
 ```
 
@@ -123,6 +135,8 @@ calculations/weighted_average.py  Required assessment marks
 templates/index.html         Calculator page
 templates/error.html         Request error page
 static/css/style.css         Responsive styles
+static/js/app.js             Menus and in-place form updates
+tests/ui.test.cjs            JavaScript interaction checks with a simulated DOM
 tests/                       Calculation, route, storage, and workflow tests
 .github/workflows/tests.yml  Automated tests on pushes and pull requests
 pytest.ini                   Test discovery and temporary file settings
@@ -134,11 +148,14 @@ requirements.txt             Pinned dependencies
 ```powershell
 python -m pytest -q
 python -m pip check
+node --test tests/ui.test.cjs
 ```
 
 The suite covers required marks, invalid inputs, custom grade bands, final versus projected GPA, subject and assessment edits, stale result clearing, SQLite persistence and expiry, browser isolation, large saved semesters, CSV output, CSRF protection, missing records, the full add/save/calculate/export/clear workflow, Semester 1 loading without duplicates or lost edits, and EAA exclusion from every GPA calculation. Temporary test databases live under `.pytest_cache/tmp`.
 
-GitHub Actions runs the suite on Python 3.12 for pushes and pull requests.
+JavaScript tests use Node.js 22 or newer and its built-in test runner; there are no npm dependencies. They exercise in-place updates, scroll/menu/card preservation, unsaved drafts, validation failures, network failures, deletes, clearing drafts, and duplicate-submit prevention using a simulated DOM. These checks do not replace a rendered browser test.
+
+GitHub Actions runs the Python and JavaScript suites for pushes and pull requests.
 
 ## Status
 
