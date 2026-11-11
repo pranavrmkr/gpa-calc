@@ -25,6 +25,21 @@
         </div>
     {% endif %}
 
+    {% if session.get('notice') %}
+        <p class="notice-card" role="status">{{ session.get('notice') }}</p>
+    {% endif %}
+
+    <section class="card semester-preset">
+        <h2>SNU Chennai / B.Tech IT</h2>
+        <p>Add all 8 Semester 1 courses with credits and assessment weights ready to go. Existing courses and scores are kept.</p>
+        <form action="{{ url_for('semester_one') }}" method="POST">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button class="primary-button">+ Semester 1</button>
+        </form>
+        <p>19 GPA credits + 1 EAA credit. EAA is marked Pass (10 points) and excluded from GPA.</p>
+        <p>This preset keeps your current percentage cutoffs. Check them against your university's rules below.</p>
+    </section>
+
     <!-- Target -->
     <section class="card">
         <h2>Target Percentage</h2>
@@ -121,6 +136,9 @@
                 <input type="number" name="credits" aria-label="Credits" min="0.01" step="any" value="{{ subject.credits }}" required>
                 <button class="secondary-button">Save Subject</button>
             </form>
+            {% if not subject.get('is_cgpa_counted', true) %}
+                <p>Non-CGPA activity / Pass / 10 points. This credit is excluded from GPA.</p>
+            {% else %}
             <h4>Assessments</h4>
             <p>Weights must add up to 100%. Enter scores as percentages; leave pending scores blank. Save each assessment before calculating.</p>
             <p>Current total weight: {{ subject.assessments | sum(attribute='weight') | round(2) }}%</p>
@@ -202,6 +220,7 @@
 
             </form>
 
+            {% endif %}
         </div>
 
         {% else %}
@@ -259,6 +278,9 @@
 
                 <h3>{{ subject.name }}</h3>
 
+                {% if result.status == "excluded" %}
+                    <p>Pass / 10 points / Excluded from GPA</p>
+                {% else %}
                 <p>{{ 'Final' if result.final else 'Projected' }} percentage: {{ result.percentage }}%</p>
                 <p>Grade: {{ result.grade }} / Grade points: {{ result.points }}</p>
                 <p>Target: {{ result.target }}%</p>
@@ -294,6 +316,7 @@
 
                 {% endif %}
 
+                {% endif %}
             </div>
 
         {% endif %}

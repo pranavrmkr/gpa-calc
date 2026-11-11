@@ -5,6 +5,7 @@ import secrets
 from math import isfinite
 from pathlib import Path
 from storage import SQLiteSessions
+from semester_presets import add_semester_one
 
 from flask import Flask, render_template, request, redirect, url_for, session, abort, Response
 from calculations.gpa import GRADING_SCALE, validate_scale, semester_summary
@@ -60,6 +61,7 @@ def request_error(error):
 def invalidate_results():
     session.pop("results", None)
     session.pop("summary", None)
+    session.pop("notice", None)
     session.pop("error", None) 
 
 @app.route("/", methods=["GET"])
@@ -96,6 +98,16 @@ def set_target():
     
     return redirect(url_for("home"))
     
+
+@app.post("/semester-1")
+def semester_one():
+    subjects, added = add_semester_one(session.get("subjects", []))
+    session["subjects"] = subjects
+    invalidate_results()
+    session["notice"] = (f"Added {added} Semester 1 courses. Existing courses and scores were kept."
+                         if added else "Semester 1 courses are already added. Your scores were kept.")
+    return redirect(url_for("home"))
+
 
 @app.route("/add-subject", methods=["POST"])
 def add_subject():
@@ -327,7 +339,7 @@ def export():
             name = "'" + name
         if grade.lstrip().startswith(("=", "+", "-", "@")):
             grade = "'" + grade
-        writer.writerow([name, subject["credits"], "Final" if result["final"] else "Projected",
+        writer.writerow([name, subject["credits"], "Excluded from GPA" if result["status"] == "excluded" else ("Final" if result["final"] else "Projected"),
                          result["percentage"], grade, result["points"], result["target"],
                          result["required_marks"], result["maximum_possible"]])
     writer.writerow([])

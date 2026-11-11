@@ -230,3 +230,64 @@ def test_full_workflow(client):
             assert "subjects" not in session
     finally:
         app.config["CSRF_ENABLED"] = False
+
+
+def test_semester_one_loads_courses_and_can_calculate(client):
+    response = client.post("/semester-1", follow_redirects=True)
+    assert response.status_code == 200
+    assert b"+ Semester 1" in response.data
+    with client.session_transaction() as session:
+        subjects = session["subjects"]
+        assert len(subjects) == 8
+        assert sum(s["credits"] for s in subjects if s["is_cgpa_counted"]) == 19
+        assert [a["weight"] for a in subjects[0]["assessments"]] == [10, 10, 30, 50]
+        assert [a["weight"] for a in subjects[2]["assessments"]] == [10, 20, 30, 40]
+        assert [a["weight"] for a in subjects[6]["assessments"]] == [80, 20]
+        assert subjects[7]["credits"] == 1
+        assert not subjects[7]["is_cgpa_counted"]
+        assert all(a["score"] is None for s in subjects for a in s["assessments"])
+    response = client.post("/calculate", follow_redirects=True)
+    assert response.status_code == 200
+    assert b"Projected semester GPA: 9.0" in response.data
+    assert b"Pass / 10 points / Excluded from GPA" in response.data
+    assert b"Extra Academic Activity 1,1,Excluded from GPA,,Pass,10" in client.get("/export").data
+
+
+def test_semester_one_repeat_keeps_edits_and_settings(client):
+    seed_subject(client)
+    client.post("/semester-1")
+    client.post("/update-assessment/2/1", data={"weight": "10", "score": "77"})
+    client.post("/update-subject/2", data={"subject": "My Maths", "credits": "4"})
+    with client.session_transaction() as session:
+        session["scale"] = [[50, "Pass", 4], [0, "Fail", 0]]
+        session["target"] = 75
+    response = client.post("/semester-1", follow_redirects=True)
+    assert b"already added" in response.data
+    with client.session_transaction() as session:
+        assert len(session["subjects"]) == 9
+        assert session["subjects"][0]["name"] == "Math"
+        assert session["subjects"][1]["name"] == "My Maths"
+        assert session["subjects"][1]["assessments"][0]["score"] == 77
+        assert session["scale"][0] == [50, "Pass", 4]
+        assert session["target"] == 75
+
+
+def test_semester_one_invalidates_results(client):
+    seed_subject(client)
+    client.post("/calculate")
+    client.post("/semester-1")
+    with client.session_transaction() as session:
+        assert "summary" not in session
+        assert "results" not in session
+
+
+def test_semester_one_form_has_csrf_protection(client):
+    app.config["CSRF_ENABLED"] = True
+    try:
+        assert client.post("/semester-1").status_code == 400
+        client.get("/")
+        with client.session_transaction() as session:
+            token = session["csrf_token"]
+        assert client.post("/semester-1", data={"csrf_token": token}).status_code == 302
+    finally:
+        app.config["CSRF_ENABLED"] = False

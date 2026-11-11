@@ -44,6 +44,8 @@ def calculate_gpa(subjects, scale=None):
     total_credits = 0
 
     for subject in subjects:
+        if not subject.get("is_cgpa_counted", True):
+            continue
         credits = float(subject["credits"])
         percentage = float(subject["percentage"])
 
@@ -67,7 +69,15 @@ def semester_summary(subjects, target=80, pending_score=80, scale=None):
     final_subjects = []
     projected_subjects = []
     maximum_subjects = []
+    counted_subjects = [s for s in subjects if s.get("is_cgpa_counted", True)]
     for subject in subjects:
+        if not subject.get("is_cgpa_counted", True):
+            results[str(subject["id"])] = {
+                "status": "excluded", "percentage": None, "grade": "Pass", "points": 10,
+                "final": True, "target": None, "required_marks": None,
+                "maximum_possible": None,
+            }
+            continue
         try:
             result = calculate_required_marks(subject["assessments"], target)
         except ValueError as error:
@@ -90,5 +100,5 @@ def semester_summary(subjects, target=80, pending_score=80, scale=None):
         "gpa": calculate_gpa(final_subjects, scale),
         "projected_gpa": calculate_gpa(projected_subjects, scale),
         "maximum_gpa": calculate_gpa(maximum_subjects, scale),
-        "complete": bool(subjects) and len(final_subjects) == len(subjects),
+        "complete": bool(counted_subjects) and len(final_subjects) == len(counted_subjects),
     }
