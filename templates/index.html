@@ -140,7 +140,7 @@
                 <p>Non-CGPA activity / Pass / 10 points. This credit is excluded from GPA.</p>
             {% else %}
             <h4>Assessments</h4>
-            <p>Weights must add up to 100%. Enter scores as percentages; leave pending scores blank. Save each assessment before calculating.</p>
+            <p>Weights must add up to 100%. Enter a percentage or marks like 14/20 (70%); leave pending scores blank. Marks convert automatically when saved. Save each assessment before calculating.</p>
             <p>Current total weight: {{ subject.assessments | sum(attribute='weight') | round(2) }}%</p>
 
             {% if subject.assessments %}
@@ -171,14 +171,14 @@
                                value="{{ assessment.weight }}"
                                required>
 
-                        <input type="number"
-                               aria-label="Assessment score percentage"
+                        <input type="text"
+                               aria-label="Assessment score as percentage or earned/total marks"
                                name="score"
-                               placeholder="Pending"
-                               min="0"
-                               max="100"
-                               step="0.01"
-                               value="{{ assessment.score if assessment.score is not none else '' }}">
+                               placeholder="70 or 14/20"
+                               value="{{ assessment.get('score_input', assessment.score if assessment.score is not none else '') }}">
+                        {% if assessment.score is not none %}
+                            <span class="score-percentage">{{ assessment.score | round(2) }}%</span>
+                        {% endif %}
 
                         <button class="secondary-button">Save</button>
 

@@ -44,7 +44,7 @@ The supplied specification defines grade points but does not provide percentage 
 
 1. Set the target percentage you want in each subject.
 2. Use **+ Semester 1**, or add subjects with their credit values. You can edit names and credits later.
-3. Add assessments, then save each assessment's weight and score. Weights within each subject must total 100%. Scores are percentages, not raw marks: 18 out of 20 should be entered as 90. Leave unfinished assessments blank; a score of 0 counts as completed.
+3. Add assessments, then save each assessment's weight and score. Weights within each subject must total 100%. Scores accept percentages or earned/total marks: enter `18/20` or `90` for 90%. Fractions convert automatically when you save, and the converted percentage appears beside the field. Your original marks entry stays in the field for editing. Decimal marks such as `14.5/20` work too. Total marks must be positive, and earned marks must be between zero and the total. Leave unfinished assessments blank; a score of 0 counts as completed.
 4. In **Grading and projections**, set your expected score for pending assessments and your target semester GPA. Enter your institution's grade bands and save the settings.
 5. Select **Calculate Results** to see required marks, subject grades, and semester GPA projections.
 6. Select **Download CSV** in the results to export the current calculation.

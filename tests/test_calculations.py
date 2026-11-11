@@ -69,3 +69,20 @@ def test_invalid_target():
 
     with pytest.raises(ValueError):
         calculate_required_marks([], 110)
+
+@pytest.mark.parametrize("value,expected", [
+    ("14/20", 70), (" 14 / 20 ", 70), ("14.5/20", 72.5),
+    ("0/20", 0), ("20/20", 100), ("70", 70), ("0", 0), ("", None), (" ", None),
+])
+def test_parse_score(value, expected):
+    from calculations.weighted_average import parse_score
+    assert parse_score(value) == expected
+
+
+@pytest.mark.parametrize("value", ["14/0", "-1/20", "21/20", "14/-20", "1/2/3",
+                                   "14/", "/20", "abc", "nan", "inf", "nan/20",
+                                   "14/inf", "101", "-1", "inf/inf"])
+def test_invalid_marks(value):
+    from calculations.weighted_average import parse_score
+    with pytest.raises(ValueError, match="Enter a percentage"):
+        parse_score(value)

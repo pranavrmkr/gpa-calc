@@ -6,6 +6,7 @@ from math import isfinite
 from pathlib import Path
 from storage import SQLiteSessions
 from semester_presets import add_semester_one
+from calculations.weighted_average import parse_score
 
 from flask import Flask, render_template, request, redirect, url_for, session, abort, Response
 from calculations.gpa import GRADING_SCALE, validate_scale, semester_summary
@@ -225,7 +226,7 @@ def update_assessment(subject_id, assessment_id):
 
         score_input = request.form.get("score", "").strip()
 
-        score = float(score_input) if score_input else None
+        score = parse_score(score_input)
 
         if not 0 <= weight <= 100:
             raise ValueError("Weight must be between 0 and 100.")
@@ -247,12 +248,13 @@ def update_assessment(subject_id, assessment_id):
                         assessment["name"] = name
                         assessment["weight"] = weight
                         assessment["score"] = score
+                        assessment["score_input"] = score_input
 
         session["subjects"] = subjects
         invalidate_results()
         
-    except (ValueError, KeyError):
-        session["error"] = "Invalid weight or assessment score."
+    except (ValueError, KeyError) as error:
+        session["error"] = str(error) if isinstance(error, ValueError) else "Weight is required."
 
     return redirect(url_for("home"))
 

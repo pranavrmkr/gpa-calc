@@ -1,3 +1,24 @@
+from math import isfinite
+
+
+def parse_score(value):
+    value = value.strip()
+    if not value:
+        return None
+    try:
+        if "/" in value:
+            earned, total = (float(part.strip()) for part in value.split("/"))
+            if not isfinite(earned) or not isfinite(total) or total <= 0 or not 0 <= earned <= total:
+                raise ValueError
+            return earned / total * 100
+        score = float(value)
+        if not isfinite(score) or not 0 <= score <= 100:
+            raise ValueError
+        return score
+    except ValueError:
+        raise ValueError("Enter a percentage from 0 to 100 or marks like 14/20. Total marks must be positive and earned marks cannot exceed the total.") from None
+
+
 def calculate_required_marks(assessments, target):
 
     if not 0 <= target <= 100:

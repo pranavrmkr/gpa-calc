@@ -291,3 +291,33 @@ def test_semester_one_form_has_csrf_protection(client):
         assert client.post("/semester-1", data={"csrf_token": token}).status_code == 302
     finally:
         app.config["CSRF_ENABLED"] = False
+
+
+def test_fraction_marks_save_and_contribute_as_percentages(client):
+    seed_subject(client)
+    response = client.post("/update-assessment/1/1", data={"weight": "40", "score": "14/20"},
+                           follow_redirects=True)
+    assert b'value="14/20"' in response.data
+    assert b"70.0%" in response.data
+    with client.session_transaction() as session:
+        assert session["subjects"][0]["assessments"][0]["score"] == 70
+    client.post("/calculate")
+    with client.session_transaction() as session:
+        assert session["results"]["1"]["completed_contribution"] == 28
+    assert b"Math,4,Projected,76.0" in client.get("/export").data
+    client.post("/update-assessment/1/1", data={"weight": "40", "score": ""})
+    with client.session_transaction() as session:
+        assert session["subjects"][0]["assessments"][0]["score"] is None
+        assert session["subjects"][0]["assessments"][0]["score_input"] == ""
+
+
+@pytest.mark.parametrize("score", ["14/0", "21/20", "bad", "nan/20"])
+def test_invalid_fraction_preserves_saved_assessment(client, score):
+    seed_subject(client)
+    response = client.post("/update-assessment/1/1", data={"weight": "50", "score": score},
+                           follow_redirects=True)
+    assert b"Enter a percentage" in response.data
+    with client.session_transaction() as session:
+        assessment = session["subjects"][0]["assessments"][0]
+        assert assessment["weight"] == 40
+        assert assessment["score"] == 75
