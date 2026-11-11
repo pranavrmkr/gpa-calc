@@ -1,202 +1,123 @@
 # GPA Calculator
 
-A web-based Grade and GPA Calculator built using Python, Flask, HTML, and CSS. The application helps students manage subjects, configure assessment weightages, calculate the marks required to achieve a target percentage, and work towards calculating their semester GPA.
+A Flask app for planning assessment marks, checking subject grades, and calculating a credit-weighted semester GPA. It includes custom grade bands, GPA projections, SQLite saving, and CSV downloads.
 
-## Features
+## Run locally
 
-### 1. Subject Management
-- Add and delete subjects.
-- Assign credit values to individual subjects.
-- Manage multiple subjects within one session.
-
-### 2. Assessment Management
-- Add assessments under individual subjects.
-- Configure assessment weightages as percentages.
-- Enter marks obtained in completed assessments.
-- Leave pending assessments without a score.
-- Edit and delete assessments.
-
-### 3. Weighted Percentage Calculator
-- Set a target percentage.
-- Calculate the marks required in remaining assessments.
-- Display completed assessment contributions.
-- Calculate the remaining assessment weightage.
-- Determine the maximum achievable percentage.
-- Identify whether the target is achievable.
-
-### 4. GPA Calculation Engine
-- Convert percentages into letter grades.
-- Convert letter grades into grade points.
-- Calculate credit-weighted semester GPA.
-- Uses a configurable grading scale in the calculation module.
-
-*Note: GPA calculations currently use an illustrative 10-point grading scale. Integration with the Flask interface and support for institution-specific grading systems are planned.*
-
-## Tech Stack
-
-| Technology | Purpose |
-|---|---|
-| Python 3.12 | Application logic |
-| Flask 3.1 | Backend framework |
-| HTML5 | Webpage structure |
-| CSS3 | Styling and responsive layout |
-| Jinja2 | HTML templating |
-| pytest | Unit testing |
-| Git | Version control |
-
-## Project Structure
-
-```text
-GPA_calc/
-│
-├── calculations/
-│   ├── __init__.py
-│   ├── weighted_average.py
-│   └── gpa.py
-│
-├── templates/
-│   └── index.html
-│
-├── static/
-│   └── css/
-│       └── style.css
-│
-├── tests/
-│   ├── test_calculations.py
-│   └── test_gpa.py
-│
-├── app.py
-├── requirements.txt
-├── README.md
-└── .gitignore
-```
-
-## Installation and Setup
-
-### 1. Clone the repository
-
-```bash
-git clone https://github.com/pranavrmkr/gpa-calc.git
-cd gpa-calc
-```
-
-### 2. Create a virtual environment
-
-```bash
-python -m venv .venv
-```
-
-### 3. Activate the virtual environment
-
-**Windows PowerShell:**
+Use Python 3.12.
 
 ```powershell
+git clone https://github.com/pranavrmkr/gpa-calc.git
+cd gpa-calc
+python -m venv .venv
 .venv\Scripts\Activate.ps1
-```
-
-### 4. Install dependencies
-
-```bash
-pip install -r requirements.txt
-```
-
-For a stable session across restarts, set `SECRET_KEY` to a random secret in your environment. Without it, the app creates a new key at startup and existing sessions reset.
-
-### 5. Run the application
-
-```bash
+python -m pip install -r requirements.txt
 python app.py
 ```
 
-Open the following URL in your browser:
+Open http://127.0.0.1:5000 in your browser. Debug mode is off by default.
+
+On macOS or Linux, activate with `source .venv/bin/activate` instead.
+
+## How to use it
+
+1. Set the target percentage you want in each subject.
+2. Add subjects with their credit values. You can edit names and credits later.
+3. Add assessments, then save each assessment's weight and score. Weights within each subject must total 100%. Scores are percentages, not raw marks: 18 out of 20 should be entered as 90. Leave unfinished assessments blank; a score of 0 counts as completed.
+4. In **Grading and projections**, set your expected score for pending assessments and your target semester GPA. Enter your institution's grade bands and save the settings.
+5. Select **Calculate Results** to see required marks, subject grades, and semester GPA projections.
+6. Select **Download CSV** in the results to export the current calculation.
+
+Edits invalidate previous results. Save every form before calculating again. Unsaved input is not included. **Clear All Data** removes the saved semester and settings for the current browser; export results first if you need to keep them.
+
+## Results explained
+
+- **Completed contribution** is the percentage already earned toward a subject's final result.
+- **Required average** is the score needed across the remaining assessment weight to reach the target percentage. The result says whether the target is already achieved, still possible, or unreachable.
+- **Final percentage and grade** appear when every assessment with a positive weight has a score.
+- **Projected percentage and grade** use your expected pending score for unfinished assessments.
+- **GPA for fully graded subjects** includes only finished subjects and their credits. Once all subjects are finished, this becomes **Semester GPA**.
+- **Projected semester GPA** includes all subjects, using expected pending scores.
+- **Maximum possible GPA** assumes 100% on every pending assessment. The target GPA message compares your target against the projection and maximum.
+
+A zero-weight pending assessment does not prevent a subject from being final. Calculations use full precision before displaying values rounded to two decimal places. GPA is calculated from grade points, not directly from the average percentage.
+
+## Custom grading scales
+
+The default scale is an illustrative 10-point scale, not a specific university's official policy:
+
+| Minimum percentage | Grade | Points |
+|---|---|---|
+| 90 | O | 10 |
+| 80 | A+ | 9 |
+| 70 | A | 8 |
+| 60 | B+ | 7 |
+| 50 | B | 6 |
+| 40 | C | 5 |
+| 0 | F | 0 |
+
+Each line in the grading field uses `minimum percentage, grade, points`. For example, a simple pass/fail scale is:
 
 ```text
-http://127.0.0.1:5000
+50, Pass, 4
+0, Fail, 0
 ```
 
-## Calculation Logic
+Cutoffs are inclusive. Bands are sorted automatically and must have unique cutoffs, a 0% band, nonempty grade names, and points that do not decrease as percentage rises. Percentages and grade points must be between 0 and 100. The target GPA must be within the scale's maximum. Grade names cannot contain commas.
 
-### Weighted Assessment Contribution
+## Saving and privacy
 
-Each completed assessment contributes to the final percentage according to its weightage.
+Data is stored in `instance/gpa.sqlite3`. The app creates the database automatically. A random browser cookie identifies your saved semester; subject details and scores stay in the database rather than in the cookie. Saved data survives app restarts and expires after 31 days without activity. Expired rows are cleaned up during subsequent requests.
 
-\[
-C = \sum \frac{S_i \times W_i}{100}
-\]
+This is a local, single-semester calculator without accounts or device syncing. Separate browsers have separate saved work. Clearing browser cookies loses access to that browser's saved semester. Back up the database while the app is stopped if you want to preserve it; CSV exports contain results, not a restorable backup. Database files are ignored by Git.
 
-Where:
-- \(C\) = Completed contribution
-- \(S_i\) = Assessment score
-- \(W_i\) = Assessment weightage
+Optional environment variables:
 
-### Required Marks
+- `GPA_DATABASE`: path to a different SQLite database. Defaults to `instance/gpa.sqlite3`.
+- `SECRET_KEY`: Flask secret key. The server-side saved semester does not depend on this key staying unchanged.
 
-\[
-R = \frac{T-C}{W_r/100}
-\]
+Forms use CSRF protection, and missing or deleted records show an error page. The built-in Flask server is intended for local use. Public hosting would need deployment configuration and an account/access model appropriate for saved student data.
 
-Where:
-- \(R\) = Required average in remaining assessments
-- \(T\) = Target percentage
-- \(C\) = Completed contribution
-- \(W_r\) = Remaining assessment weightage
+## Calculation logic
 
-### Credit-Weighted GPA
+For scores `S` and assessment weights `W`:
 
-\[
-GPA = \frac{\sum (C_i \times GP_i)}{\sum C_i}
-\]
-
-Where:
-- \(C_i\) = Subject credits
-- \(GP_i\) = Subject grade points
-
-## Testing
-
-Unit tests are maintained using pytest.
-
-Run the test suite using:
-
-```bash
-python -m pytest -v
+```text
+Completed contribution = sum(score * weight / 100) for completed assessments
+Required pending average = (target - completed contribution) / (remaining weight / 100)
+Projected percentage = completed contribution + expected pending score * remaining weight / 100
+Semester GPA = sum(subject credits * grade points) / sum(subject credits)
 ```
 
-Tests cover:
-- Required marks calculation.
-- Completed and pending assessments.
-- Unachievable target percentages.
-- Invalid assessment weights and scores.
-- Percentage-to-grade conversion.
-- Credit-weighted GPA calculation.
+The default grade scale can be replaced through the settings form. All subjects in a semester use the selected scale. This calculator does not implement institution-specific rounding, resit, attendance, or pass-per-assessment rules.
 
-## Current Development Status
+## Project structure
 
-- [x] Flask project setup
-- [x] Subject management
-- [x] Assessment management
-- [x] Assessment weightage configuration
-- [x] Target percentage configuration
-- [x] Required marks calculation
-- [x] Calculation validation
-- [x] Subject credit configuration
-- [x] Basic GPA calculation module
-- [ ] Connect GPA calculations to Flask
-- [ ] Display subject-wise grades and grade points
-- [ ] Display semester GPA on the webpage
-- [ ] Support configurable university grading scales
-- [ ] Improve automated test execution and coverage
+```text
+app.py                       Flask routes, settings, validation, and CSV export
+storage.py                   SQLite-backed browser sessions
+calculations/gpa.py          Grade bands and semester GPA projections
+calculations/weighted_average.py  Required assessment marks
+templates/index.html         Calculator page
+templates/error.html         Request error page
+static/css/style.css         Responsive styles
+tests/                       Calculation, route, storage, and workflow tests
+.github/workflows/tests.yml  Automated tests on pushes and pull requests
+pytest.ini                   Test discovery and temporary file settings
+requirements.txt             Pinned dependencies
+```
 
-## Future Improvements
+## Tests
 
-- Configurable grading systems based on university requirements.
-- GPA target planning and projections.
-- Persistent data storage using a database.
-- Export calculation results.
-- Improved validation and error handling.
+```powershell
+python -m pytest -q
+python -m pip check
+```
 
----
+The suite covers required marks, invalid inputs, custom grade bands, final versus projected GPA, subject and assessment edits, stale result clearing, SQLite persistence and expiry, browser isolation, large saved semesters, CSV output, CSRF protection, missing records, and the full add/save/calculate/export/clear workflow. Temporary test databases live under `.pytest_cache/tmp`.
 
-**Project:** GPA Calculator  
-**Language:** Python  
-**Framework:** Flask  
-**Status:** In Development
+GitHub Actions runs the suite on Python 3.12 for pushes and pull requests.
+
+## Status
+
+The local calculator's planned core features are implemented: subject and assessment management, required marks, subject grades, semester GPA, configurable scales, target projections, database saving, CSV export, and automated regression tests.
