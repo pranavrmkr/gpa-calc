@@ -44,6 +44,23 @@
     </section>
 
 
+    <section class="card">
+        <h2>Grading and projections</h2>
+        <p>Use your institution's grade bands. The default is an illustrative 10-point scale.</p>
+        <form action="{{ url_for('settings') }}" method="POST">
+            <label>Expected score on pending assessments (%)
+                <input type="number" name="pending_score" min="0" max="100" step="0.01" value="{{ pending_score }}" required>
+            </label>
+            <label>Target semester GPA
+                <input type="number" name="target_gpa" min="0" step="0.01" value="{{ target_gpa }}" required>
+            </label>
+            <label>Grade bands: minimum percentage, grade, points
+                <textarea name="scale" rows="8" required>{% for minimum, grade, points in scale %}{{ minimum }}, {{ grade }}, {{ points }}{{ '\n' }}{% endfor %}</textarea>
+            </label>
+            <button class="primary-button">Save Settings</button>
+        </form>
+    </section>
+
     <!-- Subjects -->
     <section class="card">
 
@@ -78,7 +95,7 @@
 
             <div class="section-heading">
 
-                <h3>{{ subject.name }} — {{ subject.credits }} Credits</h3>
+                <h3>{{ subject.name }} â€” {{ subject.credits }} Credits</h3>
 
                 <form action="{{ url_for('delete_subject', subject_id=subject.id) }}"
                       method="POST">
@@ -90,6 +107,11 @@
             </div>
 
 
+            <form action="{{ url_for('update_subject', subject_id=subject.id) }}" method="POST" class="add-subject-form">
+                <input name="subject" aria-label="Subject name" value="{{ subject.name }}" required>
+                <input type="number" name="credits" aria-label="Credits" min="0.01" step="any" value="{{ subject.credits }}" required>
+                <button class="secondary-button">Save Subject</button>
+            </form>
             <h4>Assessments</h4>
 
             {% if subject.assessments %}
@@ -108,7 +130,9 @@
                           method="POST"
                           class="assessment-form">
 
+                        <input name="assessment" aria-label="Assessment name" value="{{ assessment.name }}" required>
                         <input type="number"
+                               aria-label="Assessment weight percentage"
                                name="weight"
                                placeholder="Weight %"
                                min="0"
@@ -118,6 +142,7 @@
                                required>
 
                         <input type="number"
+                               aria-label="Assessment score percentage"
                                name="score"
                                placeholder="Pending"
                                min="0"
@@ -134,7 +159,7 @@
                                              assessment_id=assessment.id) }}"
                           method="POST">
 
-                        <button class="delete-button">×</button>
+                        <button class="delete-button">Ã—</button>
 
                     </form>
 
@@ -175,7 +200,7 @@
     <form action="{{ url_for('calculate') }}" method="POST">
 
         <button class="primary-button calculate-button">
-            Calculate Required Marks
+            Calculate Results
         </button>
 
     </form>
@@ -189,6 +214,21 @@
     <section class="card results-card">
 
     <h2>Results</h2>
+    {% if summary %}
+        <p>{{ 'Semester GPA' if summary.complete else 'GPA for fully graded subjects' }}:
+            <strong>{{ summary.gpa if summary.gpa is not none else 'No fully graded subjects yet' }}</strong></p>
+        <p>Projected semester GPA: {{ summary.projected_gpa }}</p>
+        <p>Maximum possible GPA: {{ summary.maximum_gpa }}</p>
+        <p>Projection assumes {{ pending_score }}% on every pending assessment.</p>
+        <p>Target GPA: {{ target_gpa }}.
+        {% if summary.maximum_gpa is not none and summary.maximum_gpa < target_gpa %}
+            This target is unreachable with the current scores.
+        {% elif summary.projected_gpa is not none and summary.projected_gpa >= target_gpa %}
+            Your projection meets the target.
+        {% else %}
+            Your projection is below the target. Try a higher pending score.
+        {% endif %}</p>
+    {% endif %}
 
     {% for subject in subjects %}
 
@@ -200,6 +240,8 @@
 
                 <h3>{{ subject.name }}</h3>
 
+                <p>{{ 'Final' if result.final else 'Projected' }} percentage: {{ result.percentage }}%</p>
+                <p>Grade: {{ result.grade }} / Grade points: {{ result.points }}</p>
                 <p>Target: {{ result.target }}%</p>
 
                 <p>

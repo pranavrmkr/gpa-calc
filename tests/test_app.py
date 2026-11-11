@@ -93,3 +93,31 @@ def test_clear_removes_data(client):
     client.post("/clear")
     with client.session_transaction() as session:
         assert not session
+
+
+def test_custom_settings_and_projection(client):
+    seed_subject(client)
+    response = client.post("/settings", data={"pending_score": "100", "target_gpa": "4",
+                           "scale": "70, Pass, 4\n0, Fail, 0"}, follow_redirects=True)
+    assert response.status_code == 200
+    response = client.post("/calculate", follow_redirects=True)
+    assert b"Projected semester GPA: 4.0" in response.data
+    assert b"Grade: Pass" in response.data
+
+
+@pytest.mark.parametrize("scale", ["bad", "50, A, 4", "0, F, nan"])
+def test_invalid_settings_preserve_previous_values(client, scale):
+    response = client.post("/settings", data={"pending_score": "80", "target_gpa": "4",
+                           "scale": scale}, follow_redirects=True)
+    assert b"error-card" in response.data
+    with client.session_transaction() as session:
+        assert "scale" not in session
+
+
+def test_edit_subject_and_assessment_names(client):
+    seed_subject(client)
+    client.post("/update-subject/1", data={"subject": "Algebra", "credits": "3"})
+    client.post("/update-assessment/1/1", data={"assessment": "Test", "weight": "40", "score": "90"})
+    response = client.get("/")
+    assert b"Algebra" in response.data
+    assert b"Test" in response.data

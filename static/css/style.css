@@ -731,3 +731,11 @@ form {
         overflow-wrap: anywhere;
     }
 }
+
+.container > .card { margin-bottom: 22px; }
+.card p { margin: 12px 0; line-height: 1.6; }
+.card > form { margin-top: 18px; }
+label { display: block; line-height: 1.6; }
+label input, textarea { display: block; width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 7px; font: inherit; }
+.assessment-form { flex-wrap: wrap; }
+.assessment-form input { min-width: 80px; }

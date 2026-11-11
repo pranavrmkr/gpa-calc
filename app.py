@@ -2,8 +2,8 @@ import os
 import secrets
 from math import isfinite
 
-from flask import Flask, render_template, request, redirect, url_for, session
-from calculations.weighted_average import calculate_required_marks
+from flask import Flask, render_template, request, redirect, url_for, session, abort
+from calculations.gpa import GRADING_SCALE, validate_scale, semester_summary
 
 app = Flask(__name__)
 
@@ -11,6 +11,7 @@ app.secret_key = os.environ.get("SECRET_KEY") or secrets.token_hex(32)
  
 def invalidate_results():
     session.pop("results", None)
+    session.pop("summary", None)
     session.pop("error", None) 
 
 @app.route("/", methods=["GET"])
@@ -21,7 +22,11 @@ def home():
         "index.html",
         subjects=session.get("subjects", []),
         target=session.get("target", 80),
-        results=session.get("results", {})
+        results=session.get("results", {}),
+        summary=session.get("summary"),
+        scale=session.get("scale", GRADING_SCALE),
+        pending_score=session.get("pending_score", 80),
+        target_gpa=session.get("target_gpa", 8),
     )
 
 
@@ -179,6 +184,10 @@ def update_assessment(subject_id, assessment_id):
 
                     if assessment["id"] == assessment_id:
 
+                        name = request.form.get("assessment", assessment["name"]).strip()
+                        if not name:
+                            raise ValueError("Assessment name is required.")
+                        assessment["name"] = name
                         assessment["weight"] = weight
                         assessment["score"] = score
 
@@ -193,41 +202,59 @@ def update_assessment(subject_id, assessment_id):
 
 @app.route("/calculate", methods=["POST"])
 def calculate():
-    session.pop("results", None)
-    subjects = session.get("subjects", [])
-    results = {}
-
+    invalidate_results()
     try:
+        summary = semester_summary(
+            session.get("subjects", []), session.get("target", 80),
+            session.get("pending_score", 80), session.get("scale", GRADING_SCALE)
+        )
+    except ValueError as error:
+        session["error"] = str(error)
+    else:
+        session["results"] = summary["results"]
+        session["summary"] = summary
+    return redirect(url_for("home"))
 
-        for subject in subjects:
 
-            assessments = subject["assessments"]
+@app.post("/settings")
+def settings():
+    try:
+        pending_score = float(request.form["pending_score"])
+        target_gpa = float(request.form["target_gpa"])
+        if not 0 <= pending_score <= 100:
+            raise ValueError("Pending assessment score must be between 0 and 100.")
+        scale = []
+        for line in request.form["scale"].splitlines():
+            if line.strip():
+                parts = line.split(",")
+                if len(parts) != 3:
+                    raise ValueError("Use minimum percentage, grade, points on each line.")
+                scale.append(parts)
+        scale = validate_scale(scale)
+        if not 0 <= target_gpa <= scale[0][2]:
+            raise ValueError("Target GPA must fit your grading scale.")
+    except (ValueError, KeyError) as error:
+        session["error"] = str(error) or "Check your settings."
+    else:
+        session.update(scale=scale, pending_score=pending_score, target_gpa=target_gpa)
+        invalidate_results()
+    return redirect(url_for("home"))
 
-            if not assessments:
-                raise ValueError(
-                    f"{subject['name']} has no assessments."
-                )
 
-            total_weight = sum(a["weight"] for a in assessments)
-
-            if abs(total_weight - 100) > 0.01:
-                raise ValueError(
-                    f"{subject['name']}: weights must total 100%."
-                )
-
-            results[str(subject["id"])] = calculate_required_marks(
-                assessments,
-                session.get("target", 80)
-            )
-
-    except ValueError as e:
-
-        session["error"] = str(e)
-        return redirect(url_for("home"))
-
-    session["results"] = results
-    session.pop("error", None)
-
+@app.post("/update-subject/<int:subject_id>")
+def update_subject(subject_id):
+    subjects = session.get("subjects", [])
+    subject = next((s for s in subjects if s["id"] == subject_id), None)
+    if subject is None:
+        abort(404)
+    name = request.form.get("subject", "").strip()
+    credits = request.form.get("credits", type=float)
+    if not name or credits is None or not isfinite(credits) or credits <= 0:
+        session["error"] = "Use a subject name and credits greater than zero."
+    else:
+        subject.update(name=name, credits=credits)
+        session["subjects"] = subjects
+        invalidate_results()
     return redirect(url_for("home"))
 
 
