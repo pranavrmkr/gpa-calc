@@ -350,3 +350,23 @@ def test_fraction_remembers_total_for_planning(client):
     with client.session_transaction() as session:
         assert session["subjects"][0]["assessments"][0]["max_marks"] == 20
         assert session["subjects"][0]["assessments"][1]["max_marks"] == 50
+
+
+def test_target_menu_shows_needed_marks_without_calculating_gpa(client):
+    seed_subject(client)
+    client.post("/update-assessment/1/2", data={"weight": "60", "score": "", "max_marks": "50"})
+    response = client.post("/subject-target/1", data={"target": "70"}, follow_redirects=True)
+    assert b"33.34 / 50.0" in response.data
+    assert b"Marks needed in each pending assessment" in response.data
+    for menu in (b"subjects", b"targets", b"gpa", b"settings"):
+        assert b'data-tab="' + menu + b'"' in response.data
+    assert client.get("/static/js/app.js").status_code == 200
+
+
+@pytest.mark.parametrize("total", ["0", "-1", "nan", "inf", "bad"])
+def test_invalid_assessment_total_keeps_saved_marks(client, total):
+    seed_subject(client)
+    response = client.post("/update-assessment/1/1", data={"weight": "40", "score": "70", "max_marks": total}, follow_redirects=True)
+    assert b"error-card" in response.data
+    with client.session_transaction() as session:
+        assert session["subjects"][0]["assessments"][0]["score"] == 75
