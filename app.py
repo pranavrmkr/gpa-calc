@@ -15,6 +15,48 @@ app.secret_key = os.environ.get("SECRET_KEY") or secrets.token_hex(32)
 app.config["DATABASE"] = os.environ.get("GPA_DATABASE", str(Path(app.instance_path) / "gpa.sqlite3"))
 app.session_interface = SQLiteSessions()
  
+app.config["CSRF_ENABLED"] = True
+
+
+@app.context_processor
+def form_helpers():
+    def csrf_token():
+        if "csrf_token" not in session:
+            session["csrf_token"] = secrets.token_hex(32)
+        return session["csrf_token"]
+    return {"csrf_token": csrf_token}
+
+
+@app.before_request
+def check_request():
+    if request.method == "POST" and app.config["CSRF_ENABLED"]:
+        token = request.form.get("csrf_token", "")
+        if not token or not secrets.compare_digest(token, session.get("csrf_token", "")):
+            abort(400, description="This form expired. Go back to the calculator and try again.")
+    arguments = request.view_args or {}
+    if "subject_id" in arguments:
+        subject = next((s for s in session.get("subjects", [])
+                        if s["id"] == arguments["subject_id"]), None)
+        if subject is None:
+            abort(404, description="That subject no longer exists.")
+        if "assessment_id" in arguments and not any(
+                a["id"] == arguments["assessment_id"] for a in subject["assessments"]):
+            abort(404, description="That assessment no longer exists.")
+
+
+@app.after_request
+def private_response(response):
+    if request.endpoint != "static":
+        response.headers["Cache-Control"] = "no-store"
+    return response
+
+
+@app.errorhandler(400)
+@app.errorhandler(404)
+def request_error(error):
+    return render_template("error.html", message=error.description, code=error.code), error.code
+
+
 def invalidate_results():
     session.pop("results", None)
     session.pop("summary", None)
@@ -96,9 +138,6 @@ def delete_subject(subject_id):
 
     session["subjects"] = subjects
 
-    results = session.get("results", {})
-    results.pop(str(subject_id), None)
-    session["results"] = results
     invalidate_results()
     
     return redirect(url_for("home"))

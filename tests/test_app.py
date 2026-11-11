@@ -5,7 +5,7 @@ from app import app
 
 @pytest.fixture
 def client(tmp_path):
-    app.config.update(TESTING=True, SECRET_KEY="test-key", DATABASE=str(tmp_path / "test.sqlite3"))
+    app.config.update(TESTING=True, CSRF_ENABLED=False, SECRET_KEY="test-key", DATABASE=str(tmp_path / "test.sqlite3"))
     with app.test_client() as client:
         yield client
 
@@ -162,3 +162,23 @@ def test_export_escapes_formulas(client):
     client.post("/update-subject/1", data={"subject": "=1+1", "credits": "4"})
     assert b"'=1+1" in client.get("/export").data
 
+
+
+@pytest.mark.parametrize("path", ["/add-assessment/99", "/delete-subject/99",
+                                   "/update-assessment/1/99", "/delete-assessment/1/99"])
+def test_missing_records_return_404(client, path):
+    seed_subject(client)
+    assert client.post(path).status_code == 404
+
+
+def test_csrf_rejects_missing_token_and_accepts_valid_form(client):
+    app.config["CSRF_ENABLED"] = True
+    try:
+        client.get("/")
+        assert client.post("/add-subject", data={"subject": "Math", "credits": "4"}).status_code == 400
+        with client.session_transaction() as session:
+            token = session["csrf_token"]
+        response = client.post("/add-subject", data={"subject": "Math", "credits": "4", "csrf_token": token})
+        assert response.status_code == 302
+    finally:
+        app.config["CSRF_ENABLED"] = False

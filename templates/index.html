@@ -29,8 +29,10 @@
         <h2>Target Percentage</h2>
 
         <form action="{{ url_for('set_target') }}" method="POST">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <div class="target-row">
                 <input type="number"
+                       aria-label="Target percentage"
                        name="target"
                        min="0"
                        max="100"
@@ -48,6 +50,7 @@
         <h2>Grading and projections</h2>
         <p>Use your institution's grade bands. The default is an illustrative 10-point scale.</p>
         <form action="{{ url_for('settings') }}" method="POST">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <label>Expected score on pending assessments (%)
                 <input type="number" name="pending_score" min="0" max="100" step="0.01" value="{{ pending_score }}" required>
             </label>
@@ -69,9 +72,11 @@
         </div>
 
         <form action="{{ url_for('add_subject') }}" method="POST" class="add-subject-form">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     <input
         type="text"
         name="subject"
+        aria-label="New subject name"
         placeholder="Subject name"
         required
     >
@@ -79,9 +84,10 @@
     <input
         type="number"
         name="credits"
+        aria-label="New subject credits"
         placeholder="Credits"
-        min="0.5"
-        step="0.5"
+        min="0.01"
+        step="any"
         required
     >
 
@@ -99,6 +105,7 @@
 
                 <form action="{{ url_for('delete_subject', subject_id=subject.id) }}"
                       method="POST">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
                     <button class="delete-button">Delete Subject</button>
 
@@ -108,6 +115,7 @@
 
 
             <form action="{{ url_for('update_subject', subject_id=subject.id) }}" method="POST" class="add-subject-form">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <input name="subject" aria-label="Subject name" value="{{ subject.name }}" required>
                 <input type="number" name="credits" aria-label="Credits" min="0.01" step="any" value="{{ subject.credits }}" required>
                 <button class="secondary-button">Save Subject</button>
@@ -129,6 +137,7 @@
                                              assessment_id=assessment.id) }}"
                           method="POST"
                           class="assessment-form">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
                         <input name="assessment" aria-label="Assessment name" value="{{ assessment.name }}" required>
                         <input type="number"
@@ -158,6 +167,7 @@
                                              subject_id=subject.id,
                                              assessment_id=assessment.id) }}"
                           method="POST">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
                         <button class="delete-button">Ã—</button>
 
@@ -177,9 +187,11 @@
             <form action="{{ url_for('add_assessment', subject_id=subject.id) }}"
                   method="POST"
                   class="add-assessment-form">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
                 <input type="text"
                        name="assessment"
+                       aria-label="New assessment name"
                        placeholder="Assessment name"
                        required>
 
@@ -198,6 +210,7 @@
     {% if subjects %}
 
     <form action="{{ url_for('calculate') }}" method="POST">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
         <button class="primary-button calculate-button">
             Calculate Results
@@ -256,7 +269,7 @@
                 </p>
 
                 <p>
-                    Maximum possible grade:
+                    Maximum possible percentage:
                     {{ result.maximum_possible }}%
                 </p>
 
@@ -288,6 +301,7 @@
 
 
     <form action="{{ url_for('clear') }}" method="POST">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <button class="delete-button">Clear All Data</button>
     </form>
 
