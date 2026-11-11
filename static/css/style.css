@@ -81,3 +81,6 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
     .stats p { padding: 10px; font-size: 11px; } .stats strong { font-size: 17px; }
     summary span { overflow-wrap: anywhere; }
 }
+
+.save-status { position: fixed; bottom: 20px; right: 20px; max-width: min(440px, calc(100vw - 40px)); padding: 14px 20px; background: #243951; color: white; border-radius: 10px; box-shadow: 0 6px 26px #17253b33; z-index: 20; font-size: 14px; }
+.save-status.is-error { background: #a32c36; }
