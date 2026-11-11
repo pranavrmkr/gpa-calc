@@ -1,4 +1,4 @@
-/* ---------- GLOBAL ---------- */
+/* Global */
 
 * {
     margin: 0;
@@ -22,7 +22,7 @@ body {
 }
 
 
-/* ---------- NAVIGATION ---------- */
+/* Navigation */
 
 .navbar {
     height: 76px;
@@ -96,7 +96,7 @@ body {
 }
 
 
-/* ---------- MAIN CONTAINER ---------- */
+/* Main container */
 
 .container {
     width: 84%;
@@ -105,7 +105,7 @@ body {
 }
 
 
-/* ---------- HERO ---------- */
+/* Hero */
 
 .hero {
     display: flex;
@@ -166,7 +166,7 @@ body {
 }
 
 
-/* ---------- DASHBOARD GRID ---------- */
+/* Dashboard grid */
 
 .dashboard-grid {
     display: grid;
@@ -183,7 +183,7 @@ body {
 }
 
 
-/* ---------- CARDS ---------- */
+/* Cards */
 
 .card {
     background: var(--white);
@@ -227,7 +227,7 @@ body {
 }
 
 
-/* ---------- TARGET INPUTS ---------- */
+/* Target inputs */
 
 .target-inputs {
     display: grid;
@@ -279,7 +279,7 @@ body {
 }
 
 
-/* ---------- SUBJECT MANAGER ---------- */
+/* Subject manager */
 
 .empty-state {
     text-align: center;
@@ -316,7 +316,7 @@ body {
 }
 
 
-/* ---------- BUTTONS ---------- */
+/* Buttons */
 
 .primary-button {
     background: var(--primary);
@@ -340,7 +340,7 @@ body {
 }
 
 
-/* ---------- RESULTS PANEL ---------- */
+/* Results panel */
 
 .result-placeholder {
     text-align: center;
@@ -401,7 +401,7 @@ body {
 }
 
 
-/* ---------- TIP CARD ---------- */
+/* Tip card */
 
 .tip-card {
     background: #252d48;
@@ -432,7 +432,7 @@ body {
 }
 
 
-/* ---------- FOOTER ---------- */
+/* Footer */
 
 footer {
     display: flex;
@@ -448,7 +448,7 @@ footer {
 }
 
 
-/* ---------- RESPONSIVE DESIGN ---------- */
+/* Responsive design */
 
 @media (max-width: 850px) {
 
@@ -739,3 +739,9 @@ label { display: block; line-height: 1.6; }
 label input, textarea { display: block; width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 7px; font: inherit; }
 .assessment-form { flex-wrap: wrap; }
 .assessment-form input { min-width: 80px; }
+
+.page-header p { margin-top: 12px; color: #626977; }
+button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visible {
+    outline: 3px solid var(--primary); outline-offset: 3px;
+}
+.container { padding-bottom: 30px; }

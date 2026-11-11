@@ -16,10 +16,11 @@
 
     <header class="page-header">
         <h1>GPA Calculator</h1>
+        <p>Plan your marks, grades, and semester GPA.</p>
     </header>
 
     {% if session.get('error') %}
-        <div class="error-card">
+        <div class="error-card" role="alert">
             {{ session.get('error') }}
         </div>
     {% endif %}
@@ -101,7 +102,7 @@
 
             <div class="section-heading">
 
-                <h3>{{ subject.name }} â€” {{ subject.credits }} Credits</h3>
+                <h3>{{ subject.name }} - {{ subject.credits }} Credits</h3>
 
                 <form action="{{ url_for('delete_subject', subject_id=subject.id) }}"
                       method="POST">
@@ -121,6 +122,8 @@
                 <button class="secondary-button">Save Subject</button>
             </form>
             <h4>Assessments</h4>
+            <p>Weights must add up to 100%. Enter scores as percentages; leave pending scores blank. Save each assessment before calculating.</p>
+            <p>Current total weight: {{ subject.assessments | sum(attribute='weight') | round(2) }}%</p>
 
             {% if subject.assessments %}
 
@@ -169,7 +172,7 @@
                           method="POST">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
-                        <button class="delete-button">Ã—</button>
+                        <button class="delete-button" aria-label="Delete {{ assessment.name }}">Delete</button>
 
                     </form>
 
@@ -201,6 +204,8 @@
 
         </div>
 
+        {% else %}
+        <p>Add a subject to get started. Your work saves automatically in this browser.</p>
         {% endfor %}
 
     </section>
