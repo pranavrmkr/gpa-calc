@@ -33,8 +33,8 @@
         <p>Enter marks like 14/20 or a percentage like 70. Save each row when you're done.</p></div></div>
         <section class="card semester-preset">
             <div><h3>SNU Chennai / B.Tech IT</h3>
-            <p>All 8 courses, credits, and assessment weights in one click. Existing courses and scores are kept.</p>
-            <p class="muted">19 GPA credits + 1 EAA credit. EAA is Pass (10 points), excluded from GPA. Current grade cutoffs stay unchanged.</p></div>
+            <p>All 9 courses, credits, and assessment weights in one click. Existing courses and scores are kept.</p>
+            <p class="muted">21 GPA credits + 1 EAA credit. EAA is Pass (10 points), excluded from GPA. Current grade cutoffs stay unchanged.</p></div>
             <form action="{{ url_for('semester_one') }}" method="POST">{{ csrf() }}<button class="primary-button">+ Semester 1</button></form>
         </section>
         <details class="card" id="new-subject" {% if not subjects %}open{% endif %}>

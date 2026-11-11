@@ -16,6 +16,7 @@ COURSES = [
     ("Professional Ethics and Human Values", 2, "THEORY"),
     ("Open-Source Tools and Prompt Engineering", 2, "PRACTICAL"),
     ("Extra Academic Activity 1", 1, "EAA"),
+    ("Introduction to ARVR", 2, "PRACTICAL"),
 ]
 
 

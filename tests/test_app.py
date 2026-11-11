@@ -238,11 +238,16 @@ def test_semester_one_loads_courses_and_can_calculate(client):
     assert b"+ Semester 1" in response.data
     with client.session_transaction() as session:
         subjects = session["subjects"]
-        assert len(subjects) == 8
-        assert sum(s["credits"] for s in subjects if s["is_cgpa_counted"]) == 19
+        assert len(subjects) == 9
+        assert sum(s["credits"] for s in subjects if s["is_cgpa_counted"]) == 21
         assert [a["weight"] for a in subjects[0]["assessments"]] == [10, 10, 30, 50]
         assert [a["weight"] for a in subjects[2]["assessments"]] == [10, 20, 30, 40]
         assert [a["weight"] for a in subjects[6]["assessments"]] == [80, 20]
+        assert subjects[8]["name"] == "Introduction to ARVR"
+        assert subjects[8]["credits"] == 2
+        assert subjects[8]["is_cgpa_counted"]
+        assert subjects[8]["schema"] == "PRACTICAL"
+        assert [a["weight"] for a in subjects[8]["assessments"]] == [80, 20]
         assert subjects[7]["credits"] == 1
         assert not subjects[7]["is_cgpa_counted"]
         assert all(a["score"] is None for s in subjects for a in s["assessments"])
@@ -264,7 +269,7 @@ def test_semester_one_repeat_keeps_edits_and_settings(client):
     response = client.post("/semester-1", follow_redirects=True)
     assert b"already added" in response.data
     with client.session_transaction() as session:
-        assert len(session["subjects"]) == 9
+        assert len(session["subjects"]) == 10
         assert session["subjects"][0]["name"] == "Math"
         assert session["subjects"][1]["name"] == "My Maths"
         assert session["subjects"][1]["assessments"][0]["score"] == 77
@@ -370,3 +375,21 @@ def test_invalid_assessment_total_keeps_saved_marks(client, total):
     assert b"error-card" in response.data
     with client.session_transaction() as session:
         assert session["subjects"][0]["assessments"][0]["score"] == 75
+
+
+def test_semester_one_adds_arvr_to_existing_semester_without_losing_scores(client):
+    from semester_presets import add_semester_one
+    subjects, _ = add_semester_one([])
+    subjects = [s for s in subjects if s["name"] != "Introduction to ARVR"]
+    subjects[0]["assessments"][0]["score"] = 75
+    with client.session_transaction() as session:
+        session["subjects"] = subjects
+    client.post("/semester-1")
+    client.post("/semester-1")
+    with client.session_transaction() as session:
+        saved = session["subjects"]
+        assert len(saved) == 9
+        assert saved[0]["assessments"][0]["score"] == 75
+        assert saved[7]["preset_key"] == "snu-it-sem1-8"
+        assert not saved[7]["is_cgpa_counted"]
+        assert saved[8]["name"] == "Introduction to ARVR"

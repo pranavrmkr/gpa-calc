@@ -32,11 +32,12 @@ Click **+ Semester 1** near the top of the page to load the SNU Chennai B.Tech I
 | Introduction to Web Programming | 3 | Combined CIA 10%, Mid-Semester Theory 20%, End-Semester Practical 30%, End-Semester Theory 40% |
 | Professional Ethics and Human Values | 2 | CIA 1 10%, CIA 2 10%, Mid-Semester 30%, End-Semester 50% |
 | Open-Source Tools and Prompt Engineering | 2 | Internal Continuous Assessments 80%, End-Semester 20% |
+| Introduction to ARVR | 2 | Internal Continuous Assessments 80%, End-Semester 20% |
 | Extra Academic Activity 1 | 1 | Pass / 10 points, excluded from GPA |
 
-The preset includes **19 GPA credits plus 1 non-CGPA EAA credit**. EAA has no weighted assessments and is marked Pass with 10 points according to the supplied specification. Its credit and points are excluded from final, projected, and maximum GPA; CSV downloads label it as excluded.
+The preset includes **21 GPA credits plus 1 non-CGPA EAA credit**. EAA has no weighted assessments and is marked Pass with 10 points according to the supplied specification. Its credit and points are excluded from final, projected, and maximum GPA; CSV downloads label it as excluded.
 
-Clicking again adds only missing courses. Preset IDs and matching course names prevent duplicates, and existing courses, saved scores, renamed preset courses, and settings are preserved. Matching existing courses are left as they are rather than having their assessments replaced. You can still add and edit subjects manually.
+Clicking again adds only missing courses, including Introduction to ARVR for semesters loaded before it was added. Preset IDs and matching course names prevent duplicates, and existing courses, saved scores, renamed preset courses, and settings are preserved. Matching existing courses are left as they are rather than having their assessments replaced. You can still add and edit subjects manually.
 
 The supplied specification defines grade points but does not provide percentage cutoffs. Loading Semester 1 keeps your current grading scale; check the cutoffs against your institution's rules before relying on the GPA.
 
