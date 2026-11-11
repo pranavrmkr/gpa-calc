@@ -1,3 +1,4 @@
+from contextlib import contextmanager
 import json
 import secrets
 import sqlite3
@@ -14,12 +15,17 @@ class SavedSession(dict, SessionMixin):
 
 
 class SQLiteSessions(SessionInterface):
+    @contextmanager
     def connect(self, app):
         path = Path(app.config["DATABASE"])
         path.parent.mkdir(parents=True, exist_ok=True)
         connection = sqlite3.connect(path)
-        connection.execute("CREATE TABLE IF NOT EXISTS sessions (id TEXT PRIMARY KEY, data TEXT NOT NULL, expires REAL NOT NULL)")
-        return connection
+        try:
+            with connection:
+                connection.execute("CREATE TABLE IF NOT EXISTS sessions (id TEXT PRIMARY KEY, data TEXT NOT NULL, expires REAL NOT NULL)")
+                yield connection
+        finally:
+            connection.close()
 
     def open_session(self, app, request):
         sid = request.cookies.get(self.get_cookie_name(app), "")

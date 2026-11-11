@@ -182,3 +182,51 @@ def test_csrf_rejects_missing_token_and_accepts_valid_form(client):
         assert response.status_code == 302
     finally:
         app.config["CSRF_ENABLED"] = False
+
+
+def test_database_reopens_in_new_app(client):
+    from flask import Flask, session
+    from storage import SQLiteSessions
+    seed_subject(client)
+    restarted = Flask(__name__)
+    restarted.config["DATABASE"] = app.config["DATABASE"]
+    restarted.session_interface = SQLiteSessions()
+
+    @restarted.get("/")
+    def saved_subject():
+        return session["subjects"][0]["name"]
+
+    with restarted.test_client() as reopened:
+        reopened.set_cookie("session", client.get_cookie("session").value)
+        assert reopened.get("/").data == b"Math"
+
+
+def test_expired_session_is_not_reused(client):
+    import sqlite3
+    seed_subject(client)
+    with sqlite3.connect(app.config["DATABASE"]) as database:
+        database.execute("UPDATE sessions SET expires = 0")
+    assert b"Math" not in client.get("/").data
+
+
+def test_full_workflow(client):
+    app.config["CSRF_ENABLED"] = True
+    try:
+        client.get("/")
+        with client.session_transaction() as session:
+            token = session["csrf_token"]
+        def post(path, **data):
+            return client.post(path, data={**data, "csrf_token": token}, follow_redirects=True)
+        post("/add-subject", subject="Math", credits="4")
+        post("/add-assessment/1", assessment="Exam")
+        post("/update-assessment/1/1", assessment="Exam", weight="100", score="95")
+        response = post("/calculate")
+        assert b"Semester GPA" in response.data
+        assert b"Final percentage: 95.0%" in response.data
+        assert b"Grade: O" in response.data
+        assert client.get("/export").status_code == 200
+        post("/clear")
+        with client.session_transaction() as session:
+            assert "subjects" not in session
+    finally:
+        app.config["CSRF_ENABLED"] = False
