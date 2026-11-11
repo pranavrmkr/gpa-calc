@@ -37,3 +37,8 @@ def test_invalid_credits():
 
 def test_empty_subjects():
     assert calculate_gpa([]) is None
+
+@pytest.mark.parametrize("credits", [float("nan"), float("inf"), -1])
+def test_nonfinite_or_negative_credits(credits):
+    with pytest.raises(ValueError):
+        calculate_gpa([{"credits": credits, "percentage": 90}])

@@ -76,8 +76,8 @@ GPA_calc/
 ### 1. Clone the repository
 
 ```bash
-git clone <repository-url>
-cd GPA_calc
+git clone https://github.com/pranavrmkr/gpa-calc.git
+cd gpa-calc
 ```
 
 ### 2. Create a virtual environment
@@ -99,6 +99,8 @@ python -m venv .venv
 ```bash
 pip install -r requirements.txt
 ```
+
+For a stable session across restarts, set `SECRET_KEY` to a random secret in your environment. Without it, the app creates a new key at startup and existing sessions reset.
 
 ### 5. Run the application
 

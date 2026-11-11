@@ -710,3 +710,24 @@ form {
 .add-subject-form input[name="credits"] {
     flex: 0 0 110px;
 }
+.target-row,
+.add-subject-form,
+.add-assessment-form,
+.assessment-form {
+    flex-direction: row;
+}
+
+@media (max-width: 650px) {
+    .add-subject-form input[name="credits"] {
+        flex: 1 1 110px;
+    }
+
+    .section-heading {
+        flex-wrap: wrap;
+        gap: 12px;
+    }
+
+    .assessment-name {
+        overflow-wrap: anywhere;
+    }
+}

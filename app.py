@@ -1,10 +1,13 @@
+import os
+import secrets
+from math import isfinite
+
 from flask import Flask, render_template, request, redirect, url_for, session
 from calculations.weighted_average import calculate_required_marks
-from calculations.gpa import calculate_gpa, percentage_to_grade
 
 app = Flask(__name__)
 
-app.secret_key = "development-secret-key"
+app.secret_key = os.environ.get("SECRET_KEY") or secrets.token_hex(32)
  
 def invalidate_results():
     session.pop("results", None)
@@ -48,11 +51,11 @@ def add_subject():
 
     if not name:
         session["error"] = "Subject name is required."
-        return redirect(url_for("index"))
+        return redirect(url_for("home"))
 
-    if credits is None or credits <= 0:
+    if credits is None or not isfinite(credits) or credits <= 0:
         session["error"] = "Credits must be greater than zero."
-        return redirect(url_for("index"))
+        return redirect(url_for("home"))
 
     subjects = session.get("subjects", [])
 
@@ -102,7 +105,8 @@ def add_assessment(subject_id):
             name = request.form.get("assessment", "").strip()
 
             if not name:
-                break
+                session["error"] = "Assessment name is required."
+                return redirect(url_for("home"))
 
             assessments = subject["assessments"]
 
@@ -121,6 +125,7 @@ def add_assessment(subject_id):
             break
 
     session["subjects"] = subjects
+    invalidate_results()
 
     return redirect(url_for("home"))
 
@@ -221,8 +226,6 @@ def calculate():
         return redirect(url_for("home"))
 
     session["results"] = results
-    invalidate_results()
-    
     session.pop("error", None)
 
     return redirect(url_for("home"))
@@ -237,4 +240,4 @@ def clear():
 
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run()

@@ -1,3 +1,6 @@
+from math import isfinite
+
+
 GRADING_SCALE = [
     (90, "O", 10),
     (80, "A+", 9),
@@ -26,7 +29,7 @@ def calculate_gpa(subjects):
         credits = float(subject["credits"])
         percentage = float(subject["percentage"])
 
-        if credits <= 0:
+        if not isfinite(credits) or credits <= 0:
             raise ValueError("Credits must be greater than zero.")
 
         grade, points = percentage_to_grade(percentage)
