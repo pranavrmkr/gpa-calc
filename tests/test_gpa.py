@@ -6,7 +6,8 @@ from calculations.gpa import percentage_to_grade, calculate_gpa
 def test_percentage_to_grade():
     assert percentage_to_grade(95) == ("O", 10)
     assert percentage_to_grade(85) == ("A+", 9)
-    assert percentage_to_grade(45) == ("C", 5)
+    assert percentage_to_grade(50) == ("C", 5)
+    assert percentage_to_grade(45) == ("F", 0)
     assert percentage_to_grade(30) == ("F", 0)
 
 

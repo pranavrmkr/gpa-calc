@@ -76,16 +76,16 @@ A zero-weight pending assessment does not prevent a subject from being final. GP
 
 ## Custom grading scales
 
-The default scale is an illustrative 10-point scale, not a specific university's official policy:
+The default grading system rounds each final course percentage to the nearest whole number, then applies these bands:
 
 | Minimum percentage | Grade | Points |
 |---|---|---|
-| 90 | O | 10 |
-| 80 | A+ | 9 |
-| 70 | A | 8 |
-| 60 | B+ | 7 |
-| 50 | B | 6 |
-| 40 | C | 5 |
+| 91 | O | 10 |
+| 81 | A+ | 9 |
+| 71 | A | 8 |
+| 61 | B+ | 7 |
+| 51 | B | 6 |
+| 50 | C | 5 |
 | 0 | F | 0 |
 
 Each line in the grading field uses `minimum percentage, grade, points`. For example, a simple pass/fail scale is:
@@ -95,7 +95,7 @@ Each line in the grading field uses `minimum percentage, grade, points`. For exa
 0, Fail, 0
 ```
 
-Cutoffs are inclusive. Bands are sorted automatically and must have unique cutoffs, a 0% band, nonempty grade names, and points that do not decrease as percentage rises. Percentages and grade points must be between 0 and 100. The target GPA must be within the scale's maximum. Grade names cannot contain commas.
+The rounded mark uses half-up rounding (so 50.5 becomes 51). Cutoffs are inclusive. Bands are sorted automatically and must have unique cutoffs, a 0% band, nonempty grade names, and points that do not decrease as percentage rises. Percentages and grade points must be between 0 and 100. The target GPA must be within the scale's maximum. Grade names cannot contain commas.
 
 ## Saving and privacy
 

@@ -149,7 +149,7 @@
         <section class="card"><h3>Default subject target</h3><p>Used by subjects without their own target.</p>
             <form action="{{ url_for('set_target') }}" method="POST" class="form-row">{{ csrf() }}<label>Target percentage<input type="number" name="target" min="0" max="100" step="0.01" value="{{ target }}" required></label><button class="primary-button">Save Target</button></form>
         </section>
-        <section class="card"><h3>Grading and projections</h3><p>The default is an illustrative 10-point scale. Use your institution's official percentage cutoffs.</p>
+        <section class="card"><h3>Grading and projections</h3><p>Final marks round to the nearest whole number, then use your grading scale. The default is the supplied SNU grading system.</p>
             <form action="{{ url_for('settings') }}" method="POST">{{ csrf() }}
                 <div class="form-row"><label class="grow">Expected score on pending assessments (%)<input type="number" name="pending_score" min="0" max="100" step="0.01" value="{{ pending_score }}" required></label>
                 <label class="grow">Target semester GPA<input type="number" name="target_gpa" min="0" step="0.01" value="{{ target_gpa }}" required></label></div>

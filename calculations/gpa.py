@@ -1,13 +1,13 @@
-from math import isfinite
+from math import floor, isfinite
 
 
 GRADING_SCALE = [
-    (90, "O", 10),
-    (80, "A+", 9),
-    (70, "A", 8),
-    (60, "B+", 7),
-    (50, "B", 6),
-    (40, "C", 5),
+    (91, "O", 10),
+    (81, "A+", 9),
+    (71, "A", 8),
+    (61, "B+", 7),
+    (51, "B", 6),
+    (50, "C", 5),
     (0, "F", 0)
 ]
 
@@ -31,11 +31,12 @@ def validate_scale(scale):
 
 
 def percentage_to_grade(percentage, scale=None):
-    if not 0 <= percentage <= 100:
+    if not isfinite(percentage) or not 0 <= percentage <= 100:
         raise ValueError("Percentage must be between 0 and 100.")
 
+    rounded_percentage = floor(percentage + 0.5)
     for minimum, grade, points in validate_scale(GRADING_SCALE if scale is None else scale):
-        if percentage >= minimum:
+        if rounded_percentage >= minimum:
             return grade, points
 
 
