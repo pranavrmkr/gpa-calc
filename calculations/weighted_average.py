@@ -1,4 +1,4 @@
-from math import isfinite
+from math import ceil, isfinite
 
 
 def parse_score(value):
@@ -91,3 +91,23 @@ def calculate_required_marks(assessments, target):
             else None
         )
     }
+
+def assessment_plan(assessments, target, pending_score=80):
+    result = calculate_required_marks(assessments, target)
+    completed = sum(a["weight"] * a["score"] / 100 for a in assessments if a["score"] is not None)
+    pending = [a for a in assessments if a["score"] is None and a["weight"] > 0]
+    rows = []
+    for assessment in pending:
+        other_contribution = sum(a["weight"] * pending_score / 100 for a in pending if a is not assessment)
+        required = max(0, (target - completed - other_contribution) / (assessment["weight"] / 100))
+        possible = required <= 100 + 1e-9
+        required = min(required, 100) if possible else None
+        total = assessment.get("max_marks")
+        rows.append({
+            "id": assessment["id"], "name": assessment["name"], "possible": possible,
+            "percentage": ceil(required * 100 - 1e-9) / 100 if possible else None,
+            "marks": ceil(required * total - 1e-9) / 100 if possible and total else None,
+            "total": total,
+        })
+    result["assessments"] = rows
+    return result

@@ -79,7 +79,7 @@ def semester_summary(subjects, target=80, pending_score=80, scale=None):
             }
             continue
         try:
-            result = calculate_required_marks(subject["assessments"], target)
+            result = calculate_required_marks(subject["assessments"], subject.get("target", target))
         except ValueError as error:
             raise ValueError(f"{subject['name']}: {error}") from error
         assessments = subject["assessments"]

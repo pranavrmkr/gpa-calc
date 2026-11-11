@@ -6,7 +6,7 @@ from math import isfinite
 from pathlib import Path
 from storage import SQLiteSessions
 from semester_presets import add_semester_one
-from calculations.weighted_average import parse_score
+from calculations.weighted_average import parse_score, assessment_plan
 
 from flask import Flask, render_template, request, redirect, url_for, session, abort, Response
 from calculations.gpa import GRADING_SCALE, validate_scale, semester_summary
@@ -68,10 +68,20 @@ def invalidate_results():
 @app.route("/", methods=["GET"])
 
 def home():
-
+    plans = {}
+    for subject in session.get("subjects", []):
+        if not subject.get("is_cgpa_counted", True):
+            continue
+        try:
+            plans[subject["id"]] = assessment_plan(
+                subject["assessments"], subject.get("target", session.get("target", 80)),
+                session.get("pending_score", 80))
+        except ValueError as error:
+            plans[subject["id"]] = {"error": str(error)}
     return render_template(
         "index.html",
         subjects=session.get("subjects", []),
+        plans=plans,
         target=session.get("target", 80),
         results=session.get("results", {}),
         summary=session.get("summary"),
@@ -99,6 +109,27 @@ def set_target():
     
     return redirect(url_for("home"))
     
+
+@app.post("/subject-target/<int:subject_id>")
+def subject_target(subject_id):
+    try:
+        value = request.form.get("target", "").strip()
+        target = float(value) if value else None
+        if target is not None and not 0 <= target <= 100:
+            raise ValueError
+    except ValueError:
+        session["error"] = "Subject target must be between 0 and 100."
+    else:
+        subjects = session.get("subjects", [])
+        subject = next(s for s in subjects if s["id"] == subject_id)
+        if target is None:
+            subject.pop("target", None)
+        else:
+            subject["target"] = target
+        session["subjects"] = subjects
+        invalidate_results()
+    return redirect(url_for("home"))
+
 
 @app.post("/semester-1")
 def semester_one():
@@ -227,6 +258,12 @@ def update_assessment(subject_id, assessment_id):
         score_input = request.form.get("score", "").strip()
 
         score = parse_score(score_input)
+        total_input = request.form.get("max_marks", "").strip()
+        max_marks = float(total_input) if total_input else None
+        if "/" in score_input:
+            max_marks = float(score_input.split("/")[1].strip())
+        if max_marks is not None and (not isfinite(max_marks) or max_marks <= 0):
+            raise ValueError("Total marks must be greater than zero.")
 
         if not 0 <= weight <= 100:
             raise ValueError("Weight must be between 0 and 100.")
@@ -249,6 +286,8 @@ def update_assessment(subject_id, assessment_id):
                         assessment["weight"] = weight
                         assessment["score"] = score
                         assessment["score_input"] = score_input
+                        if "max_marks" in request.form or "/" in score_input:
+                            assessment["max_marks"] = max_marks
 
         session["subjects"] = subjects
         invalidate_results()

@@ -86,3 +86,23 @@ def test_invalid_marks(value):
     from calculations.weighted_average import parse_score
     with pytest.raises(ValueError, match="Enter a percentage"):
         parse_score(value)
+
+
+def test_assessment_plan_uses_other_pending_score():
+    from calculations.weighted_average import assessment_plan
+    result = assessment_plan([
+        {"id": 1, "name": "Quiz", "weight": 20, "score": 70},
+        {"id": 2, "name": "Mid", "weight": 30, "score": None, "max_marks": 50},
+        {"id": 3, "name": "Final", "weight": 50, "score": None, "max_marks": 100},
+    ], 80, 80)
+    assert result["assessments"][0]["percentage"] == 86.67
+    assert result["assessments"][0]["marks"] == 43.34
+    assert result["assessments"][1]["marks"] == 84
+
+
+def test_assessment_plan_impossible_and_achieved():
+    from calculations.weighted_average import assessment_plan
+    assessments = [{"id": 1, "name": "Quiz", "weight": 50, "score": 10},
+                   {"id": 2, "name": "Final", "weight": 50, "score": None}]
+    assert not assessment_plan(assessments, 90)["assessments"][0]["possible"]
+    assert assessment_plan(assessments, 0)["assessments"][0]["percentage"] == 0

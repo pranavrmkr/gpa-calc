@@ -321,3 +321,32 @@ def test_invalid_fraction_preserves_saved_assessment(client, score):
         assessment = session["subjects"][0]["assessments"][0]
         assert assessment["weight"] == 40
         assert assessment["score"] == 75
+
+
+def test_subject_target_applies_to_results_and_export(client):
+    seed_subject(client)
+    client.post("/subject-target/1", data={"target": "70"})
+    client.post("/calculate")
+    with client.session_transaction() as session:
+        assert session["results"]["1"]["target"] == 70
+        assert session["results"]["1"]["required_marks"] == 66.67
+    assert b",70.0,66.67," in client.get("/export").data
+    client.post("/subject-target/1", data={"target": ""})
+    with client.session_transaction() as session:
+        assert "target" not in session["subjects"][0]
+
+
+@pytest.mark.parametrize("target", ["nan", "inf", "-1", "101", "bad"])
+def test_invalid_subject_target_is_rejected(client, target):
+    seed_subject(client)
+    response = client.post("/subject-target/1", data={"target": target}, follow_redirects=True)
+    assert b"Subject target must be between 0 and 100." in response.data
+
+
+def test_fraction_remembers_total_for_planning(client):
+    seed_subject(client)
+    client.post("/update-assessment/1/1", data={"weight": "40", "score": "14/20"})
+    client.post("/update-assessment/1/2", data={"weight": "60", "score": "", "max_marks": "50"})
+    with client.session_transaction() as session:
+        assert session["subjects"][0]["assessments"][0]["max_marks"] == 20
+        assert session["subjects"][0]["assessments"][1]["max_marks"] == 50
