@@ -6,16 +6,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GPA Calculator</title>
+    <title>SNU GPA Calculator</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <script src="{{ url_for('static', filename='js/app.js') }}" defer></script>
 </head>
 <body>
 <main class="container" id="calculator">
     <header class="page-header">
-        <div><span class="eyebrow">YOUR SEMESTER, AT A GLANCE</span><h1>GPA Calculator</h1>
-        <p>Add your marks, plan your targets, and check your GPA.</p></div>
-        <span class="count-label">{{ subjects | length }} subjects</span>
+        <h1>SNU GPA Calculator</h1>
     </header>
     <nav class="menu" aria-label="Calculator menus">
         <a href="#subjects" data-tab="subjects">Subjects &amp; marks</a>
@@ -29,16 +27,16 @@
     </div>
 
     <section id="subjects" data-panel aria-labelledby="subjects-heading">
-        <div class="panel-heading"><div><h2 id="subjects-heading">Subjects &amp; marks</h2>
-        <p>Enter marks like 14/20 or a percentage like 70. Save each row when you're done.</p></div></div>
+        <div class="panel-heading"><h2 id="subjects-heading">Subjects &amp; marks</h2>
+            <span class="count-label">{{ subjects | length }} subjects</span>
+        </div>
         <section class="card semester-preset">
-            <div><h3>SNU Chennai / B.Tech IT</h3>
-            <p>All 9 courses, credits, and assessment weights in one click. Existing courses and scores are kept.</p>
-            <p class="muted">21 GPA credits + 1 EAA credit. EAA is Pass (10 points), excluded from GPA. Current grade cutoffs stay unchanged.</p></div>
+            <div><h3>B.Tech IT / Semester 1</h3>
+            <p class="muted">9 courses / 21 GPA credits + 1 EAA credit</p></div>
             <form action="{{ url_for('semester_one') }}" method="POST">{{ csrf() }}<button class="primary-button">+ Semester 1</button></form>
         </section>
         <details class="card" id="new-subject" {% if not subjects %}open{% endif %}>
-            <summary>Add a subject manually</summary>
+            <summary>Add subject</summary>
             <form action="{{ url_for('add_subject') }}" method="POST" class="form-row">{{ csrf() }}
                 <label class="grow">Subject name<input name="subject" placeholder="Subject name" required></label>
                 <label>Credits<input type="number" name="credits" min="0.01" step="any" placeholder="Credits" required></label>
@@ -48,6 +46,8 @@
         {% for subject in subjects %}
         <details class="card subject-card" id="subject-{{ subject.id }}" {% if loop.first %}open{% endif %}>
             <summary><span>{{ subject.name }}</span><span class="muted">{{ subject.credits }} credits{% if not subject.get('is_cgpa_counted', true) %} / Non-CGPA{% endif %}</span></summary>
+            <details class="subject-edit" id="edit-subject-{{ subject.id }}">
+            <summary>Edit subject</summary>
             <div class="subject-tools">
                 <form action="{{ url_for('update_subject', subject_id=subject.id) }}" method="POST" class="form-row grow">{{ csrf() }}
                     <label class="grow">Subject name<input name="subject" value="{{ subject.name }}" required></label>
@@ -56,10 +56,11 @@
                 </form>
                 <form action="{{ url_for('delete_subject', subject_id=subject.id) }}" method="POST">{{ csrf() }}<button class="delete-button">Delete Subject</button></form>
             </div>
+            </details>
             {% if not subject.get('is_cgpa_counted', true) %}
                 <p>Non-CGPA activity / Pass / 10 points. This credit is excluded from GPA.</p>
             {% else %}
-                <p class="muted">Current total weight: {{ subject.assessments | sum(attribute='weight') | round(2) }}%. Weights must add up to 100%. Leave pending scores blank.</p>
+                <p class="muted">Total weight: {{ subject.assessments | sum(attribute='weight') | round(2) }}% / 100%</p>
                 {% for assessment in subject.assessments %}
                 <div class="assessment-row" id="assessment-{{ subject.id }}-{{ assessment.id }}">
                     <form action="{{ url_for('update_assessment', subject_id=subject.id, assessment_id=assessment.id) }}" method="POST" class="assessment-form">{{ csrf() }}
@@ -73,7 +74,9 @@
                     <form action="{{ url_for('delete_assessment', subject_id=subject.id, assessment_id=assessment.id) }}" method="POST">{{ csrf() }}<button class="delete-button" aria-label="Delete {{ assessment.name }}">Delete</button></form>
                 </div>
                 {% else %}<p>No assessments added.</p>{% endfor %}
-                <p class="muted">Total marks is optional and lets the target planner show marks out of 20, 50, etc. A fraction such as 14/20 fills it automatically. A plain score is always a percentage.</p>
+                <details class="input-help" id="marks-help-{{ subject.id }}"><summary>Marks entry help</summary>
+                    <p>Enter 14/20 or 70 for 70%. Leave pending scores blank. Total marks is optional; add it to see required marks in the target planner.</p>
+                </details>
                 <form action="{{ url_for('add_assessment', subject_id=subject.id) }}" method="POST" class="form-row">{{ csrf() }}
                     <label class="grow">New assessment<input name="assessment" placeholder="Assessment name" required></label>
                     <button class="secondary-button">+ Add Assessment</button>
@@ -84,10 +87,10 @@
     </section>
 
     <section id="targets" data-panel aria-labelledby="targets-heading">
-        <div class="panel-heading"><div><h2 id="targets-heading">Target planner</h2>
-        <p>Set a different final percentage for each subject and see what you need next.</p></div></div>
-        <div class="card tip-card"><p>Each assessment estimate assumes <strong>{{ pending_score }}%</strong> on the other pending assessments. These are separate scenarios, not a combined set of required scores. Change the expected score in <a href="#settings" data-tab="settings">Settings</a>.</p>
-        <p>For the same score across all pending assessments, use the required average. Marks are rounded up to two decimals; round up again if your exam only awards whole marks.</p></div>
+        <div class="panel-heading"><h2 id="targets-heading">Target planner</h2></div>
+        <div class="card tip-card"><p>Other pending assessments are estimated at <strong>{{ pending_score }}%</strong>. <a href="#settings" data-tab="settings">Change in Settings</a></p>
+            <details class="input-help" id="planner-help"><summary>How estimates work</summary><p>Each row is a separate scenario. Use the required average for the same percentage across all pending assessments. Marks round up to two decimals; round up again for exams that award whole marks.</p></details>
+        </div>
         {% for subject in subjects if subject.get('is_cgpa_counted', true) %}
         {% set plan = plans.get(subject.id) %}
         <article class="card" id="target-{{ subject.id }}">
@@ -116,7 +119,7 @@
     </section>
 
     <section id="gpa" data-panel aria-labelledby="gpa-heading">
-        <div class="panel-heading"><div><h2 id="gpa-heading">GPA calculator</h2><p>See your finished grades and where this semester could land.</p></div>
+        <div class="panel-heading"><h2 id="gpa-heading">GPA calculator</h2>
         {% if subjects %}<form action="{{ url_for('calculate') }}" method="POST">{{ csrf() }}<button class="primary-button">Calculate GPA</button></form>{% endif %}</div>
         {% if summary and results %}
             <section class="card results-card">
@@ -145,7 +148,7 @@
     </section>
 
     <section id="settings" data-panel aria-labelledby="settings-heading">
-        <div class="panel-heading"><div><h2 id="settings-heading">Settings</h2><p>Set your defaults and grading scale.</p></div></div>
+        <div class="panel-heading"><h2 id="settings-heading">Settings</h2></div>
         <section class="card"><h3>Default subject target</h3><p>Used by subjects without their own target.</p>
             <form action="{{ url_for('set_target') }}" method="POST" class="form-row">{{ csrf() }}<label>Target percentage<input type="number" name="target" min="0" max="100" step="0.01" value="{{ target }}" required></label><button class="primary-button">Save Target</button></form>
         </section>
@@ -157,10 +160,11 @@
                 <button class="primary-button">Save Settings</button>
             </form>
         </section>
-        <section class="card"><h3>Saved data</h3><p>Your saved marks stay in this browser's semester. Export results from the GPA menu before clearing anything you need to keep.</p>
+        <section class="card"><h3>Saved data</h3><p>Export results from the GPA menu before clearing saved data.</p>
             <form action="{{ url_for('clear') }}" method="POST">{{ csrf() }}<button class="delete-button">Clear All Data</button></form>
         </section>
     </section>
+    <footer class="site-footer">Made by <strong>Pranav Ramkumar</strong></footer>
 </main>
 </body>
 </html>

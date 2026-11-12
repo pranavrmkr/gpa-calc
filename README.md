@@ -1,4 +1,4 @@
-# GPA Calculator
+# SNU GPA Calculator
 
 A Flask app for planning assessment marks, checking subject grades, and calculating a credit-weighted semester GPA. It includes custom grade bands, GPA projections, SQLite saving, and CSV downloads.
 
@@ -42,6 +42,8 @@ Clicking again adds only missing courses, including Introduction to ARVR for sem
 The supplied specification defines grade points but does not provide percentage cutoffs. Loading Semester 1 keeps your current grading scale; check the cutoffs against your institution's rules before relying on the GPA.
 
 ## Menus and workflow
+
+The interface uses a compact title and four menus. Subject editing and longer input help sit in expandable sections. The footer credits Pranav Ramkumar.
 
 - **Subjects & marks**: load Semester 1, add or edit subjects, and enter assessment scores. Open a subject card to work on it. Scores accept percentages or earned/total marks: `18/20` and `90` both mean 90%. Decimal marks such as `14.5/20` work too. Fractions keep their original entry for editing and show the converted percentage after saving. Leave pending scores blank; 0 counts as completed. Assessment weights within a subject must total 100%.
 - **Target planner**: set a final percentage separately for each subject. Blank targets use the default target from Settings. Saving a target immediately updates its plan; it also applies to GPA results and CSV exports.
